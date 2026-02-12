@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import { useAuth } from '../context/AuthContext'; // Import useAuth
 import PromoBanner from '../components/PromoBanner';
 import HowItWorks from '../components/HowItWorks';
@@ -38,7 +38,7 @@ const Home = () => {
 
     const fetchRestaurants = async () => {
         try {
-            const res = await axios.get('http://localhost:5000/api/restaurants');
+            const res = await api.get('/api/restaurants');
             setRestaurants(res.data);
         } catch (error) {
             console.error('Error fetching restaurants:', error);

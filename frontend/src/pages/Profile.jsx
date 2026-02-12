@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
-import axios from 'axios';
+import api from '../utils/api';
 
 const Profile = () => {
     const { user, isAuthenticated } = useAuth();
@@ -33,11 +33,8 @@ const Profile = () => {
 
     const fetchProfileData = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const config = { headers: { Authorization: `Bearer ${token}` } };
-
             const [ordersRes] = await Promise.all([
-                axios.get('http://localhost:5000/api/orders/my-orders', config)
+                api.get('/api/orders/my-orders')
             ]);
 
             setProfile({
@@ -58,11 +55,9 @@ const Profile = () => {
     const handleUpdateProfile = async (e) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem('token');
-            await axios.put(
-                'http://localhost:5000/api/users/profile',
-                profile,
-                { headers: { Authorization: `Bearer ${token}` } }
+            await api.put(
+                '/api/users/profile',
+                profile
             );
             addToast('Profile updated successfully!', 'success');
             setEditing(false);
@@ -275,8 +270,8 @@ const Profile = () => {
                                                     {order.restaurantId?.name}
                                                 </p>
                                                 <span className={`text-xs px-2 py-1 rounded-full ${order.status === 'delivered' ? 'bg-green-100 text-green-700' :
-                                                        order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                                                            'bg-yellow-100 text-yellow-700'
+                                                    order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                                        'bg-yellow-100 text-yellow-700'
                                                     }`}>
                                                     {order.status.replace(/_/g, ' ')}
                                                 </span>

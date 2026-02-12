@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
-import axios from 'axios';
+import api from '../utils/api';
 
 const RestaurantDashboard = () => {
     const { user } = useAuth();
@@ -40,11 +40,8 @@ const RestaurantDashboard = () => {
 
     const fetchRestaurantData = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const config = { headers: { Authorization: `Bearer ${token}` } };
-
             // Get restaurant owned by this user
-            const restaurantsRes = await axios.get('http://localhost:5000/api/restaurants', config);
+            const restaurantsRes = await api.get('/api/restaurants');
             const myRestaurant = restaurantsRes.data.find(r => r.ownerId === user._id);
 
             if (!myRestaurant) {
@@ -56,8 +53,8 @@ const RestaurantDashboard = () => {
 
             // Fetch orders and food items for this restaurant
             const [ordersRes, foodItemsRes] = await Promise.all([
-                axios.get(`http://localhost:5000/api/orders/restaurant/${myRestaurant._id}`, config),
-                axios.get(`http://localhost:5000/api/fooditems?restaurantId=${myRestaurant._id}`, config)
+                api.get(`/api/orders/restaurant/${myRestaurant._id}`),
+                api.get(`/api/fooditems?restaurantId=${myRestaurant._id}`)
             ]);
 
             // Orders are already filtered by backend
@@ -74,10 +71,7 @@ const RestaurantDashboard = () => {
     const fetchOrders = async () => {
         if (!restaurant) return;
         try {
-            const token = localStorage.getItem('token');
-            const ordersRes = await axios.get(`http://localhost:5000/api/orders/restaurant/${restaurant._id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const ordersRes = await api.get(`/api/orders/restaurant/${restaurant._id}`);
             setOrders(ordersRes.data);
         } catch (error) {
             console.error('Error fetching orders:', error);
@@ -86,11 +80,9 @@ const RestaurantDashboard = () => {
 
     const updateOrderStatus = async (orderId, newStatus) => {
         try {
-            const token = localStorage.getItem('token');
-            await axios.put(
-                `http://localhost:5000/api/orders/${orderId}/status`,
-                { status: newStatus },
-                { headers: { Authorization: `Bearer ${token}` } }
+            await api.put(
+                `/api/orders/${orderId}/status`,
+                { status: newStatus }
             );
             addToast(`Order status updated to ${newStatus}`, 'success');
             fetchOrders();
@@ -103,11 +95,9 @@ const RestaurantDashboard = () => {
     const handleAddItem = async (e) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem('token');
-            await axios.post(
-                'http://localhost:5000/api/fooditems',
-                { ...newItem, restaurantId: restaurant._id, price: parseFloat(newItem.price) },
-                { headers: { Authorization: `Bearer ${token}` } }
+            await api.post(
+                '/api/fooditems',
+                { ...newItem, restaurantId: restaurant._id, price: parseFloat(newItem.price) }
             );
             addToast('Menu item added successfully!', 'success');
             setShowAddItemModal(false);
@@ -122,11 +112,9 @@ const RestaurantDashboard = () => {
     const handleUpdateItem = async (e) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem('token');
-            await axios.put(
-                `http://localhost:5000/api/fooditems/${editingItem._id}`,
-                { ...editingItem, price: parseFloat(editingItem.price) },
-                { headers: { Authorization: `Bearer ${token}` } }
+            await api.put(
+                `/api/fooditems/${editingItem._id}`,
+                { ...editingItem, price: parseFloat(editingItem.price) }
             );
             addToast('Menu item updated successfully!', 'success');
             setEditingItem(null);
@@ -141,10 +129,7 @@ const RestaurantDashboard = () => {
         if (!window.confirm('Are you sure you want to delete this item?')) return;
 
         try {
-            const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:5000/api/fooditems/${itemId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.delete(`/api/fooditems/${itemId}`);
             addToast('Menu item deleted successfully!', 'success');
             fetchRestaurantData();
         } catch (error) {

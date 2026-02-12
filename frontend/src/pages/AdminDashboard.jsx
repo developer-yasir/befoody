@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 
 const AdminDashboard = () => {
     const { user } = useAuth();
@@ -29,13 +29,10 @@ const AdminDashboard = () => {
 
     const fetchDashboardData = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const config = { headers: { Authorization: `Bearer ${token}` } };
-
             const [usersRes, restaurantsRes, ordersRes] = await Promise.all([
-                axios.get('http://localhost:5000/api/users', config),
-                axios.get('http://localhost:5000/api/restaurants', config),
-                axios.get('http://localhost:5000/api/orders/admin/all', config)
+                api.get('/api/users'),
+                api.get('/api/restaurants'),
+                api.get('/api/orders/admin/all')
             ]);
 
             const users = usersRes.data;
@@ -68,10 +65,7 @@ const AdminDashboard = () => {
         if (!window.confirm('Are you sure you want to delete this user?')) return;
 
         try {
-            const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:5000/api/users/${userId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.delete(`/api/users/${userId}`);
             fetchDashboardData();
         } catch (error) {
             console.error('Error deleting user:', error);
@@ -83,10 +77,7 @@ const AdminDashboard = () => {
         if (!window.confirm('Are you sure you want to delete this restaurant?')) return;
 
         try {
-            const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:5000/api/restaurants/${restaurantId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.delete(`/api/restaurants/${restaurantId}`);
             fetchDashboardData();
         } catch (error) {
             console.error('Error deleting restaurant:', error);
@@ -179,8 +170,8 @@ const AdminDashboard = () => {
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
                                 className={`px-6 py-3 font-semibold capitalize transition-colors ${activeTab === tab
-                                        ? 'text-blue-600 border-b-2 border-blue-600'
-                                        : 'text-gray-600 hover:text-gray-900'
+                                    ? 'text-blue-600 border-b-2 border-blue-600'
+                                    : 'text-gray-600 hover:text-gray-900'
                                     }`}
                             >
                                 {tab}
@@ -205,8 +196,8 @@ const AdminDashboard = () => {
                                         <div className="text-right">
                                             <p className="font-bold text-gray-900">${order.totalAmount.toFixed(2)}</p>
                                             <span className={`text-xs px-2 py-1 rounded-full ${order.status === 'delivered' ? 'bg-green-100 text-green-700' :
-                                                    order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                                                        'bg-yellow-100 text-yellow-700'
+                                                order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                                    'bg-yellow-100 text-yellow-700'
                                                 }`}>
                                                 {order.status}
                                             </span>
@@ -268,9 +259,9 @@ const AdminDashboard = () => {
                                             <td className="py-3 px-4">{user.email}</td>
                                             <td className="py-3 px-4">
                                                 <span className={`badge ${user.role === 'admin' ? 'badge-error' :
-                                                        user.role === 'restaurant' ? 'badge-warning' :
-                                                            user.role === 'rider' ? 'badge-info' :
-                                                                'badge-success'
+                                                    user.role === 'restaurant' ? 'badge-warning' :
+                                                        user.role === 'rider' ? 'badge-info' :
+                                                            'badge-success'
                                                     }`}>
                                                     {user.role}
                                                 </span>
@@ -349,9 +340,9 @@ const AdminDashboard = () => {
                                             <td className="py-3 px-4 font-semibold">${order.totalAmount.toFixed(2)}</td>
                                             <td className="py-3 px-4">
                                                 <span className={`badge ${order.status === 'delivered' ? 'badge-success' :
-                                                        order.status === 'cancelled' ? 'badge-error' :
-                                                            order.status === 'out_for_delivery' ? 'badge-info' :
-                                                                'badge-warning'
+                                                    order.status === 'cancelled' ? 'badge-error' :
+                                                        order.status === 'out_for_delivery' ? 'badge-info' :
+                                                            'badge-warning'
                                                     }`}>
                                                     {order.status.replace(/_/g, ' ')}
                                                 </span>

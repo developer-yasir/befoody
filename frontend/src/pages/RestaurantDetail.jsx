@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import axios from 'axios';
+import api from '../utils/api';
 
 const RestaurantDetail = () => {
     const { id } = useParams();
@@ -25,8 +25,8 @@ const RestaurantDetail = () => {
     const fetchRestaurantData = async () => {
         try {
             const [restaurantRes, foodItemsRes] = await Promise.all([
-                axios.get(`http://localhost:5000/api/restaurants/${id}`),
-                axios.get(`http://localhost:5000/api/fooditems?restaurantId=${id}`)
+                api.get(`/api/restaurants/${id}`),
+                api.get(`/api/fooditems?restaurantId=${id}`)
             ]);
             setRestaurant(restaurantRes.data);
             setFoodItems(foodItemsRes.data);
@@ -144,8 +144,8 @@ const RestaurantDetail = () => {
                                 key={category}
                                 onClick={() => setSelectedCategory(category)}
                                 className={`btn whitespace-nowrap ${selectedCategory === category
-                                        ? 'btn-primary'
-                                        : 'bg-white text-gray-700 hover:bg-gray-100'
+                                    ? 'btn-primary'
+                                    : 'bg-white text-gray-700 hover:bg-gray-100'
                                     }`}
                             >
                                 {category}
@@ -210,8 +210,8 @@ const RestaurantDetail = () => {
                                                 onClick={() => handleAddToCart(item)}
                                                 disabled={!item.isAvailable || addingToCart === item._id}
                                                 className={`btn text-sm py-2 px-4 transition-all duration-300 ${addingToCart === item._id
-                                                        ? 'btn-secondary scale-95'
-                                                        : 'btn-primary hover:shadow-glow'
+                                                    ? 'btn-secondary scale-95'
+                                                    : 'btn-primary hover:shadow-glow'
                                                     }`}
                                             >
                                                 {addingToCart === item._id ? (

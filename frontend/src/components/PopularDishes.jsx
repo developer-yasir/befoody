@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { Link } from 'react-router-dom';
 
 const PopularDishes = () => {
@@ -12,7 +12,7 @@ const PopularDishes = () => {
 
     const fetchPopularDishes = async () => {
         try {
-            const res = await axios.get('http://localhost:5000/api/fooditems');
+            const res = await api.get('/api/fooditems');
             // Get random 6 dishes
             const shuffled = res.data.sort(() => 0.5 - Math.random());
             setDishes(shuffled.slice(0, 6));

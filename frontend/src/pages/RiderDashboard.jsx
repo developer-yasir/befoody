@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
-import axios from 'axios';
+import api from '../utils/api';
 
 const RiderDashboard = () => {
     const { user } = useAuth();
@@ -29,13 +29,10 @@ const RiderDashboard = () => {
 
     const fetchRiderData = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const config = { headers: { Authorization: `Bearer ${token}` } };
-
             const [riderRes, availableRes, deliveriesRes] = await Promise.all([
-                axios.get('http://localhost:5000/api/riders/profile', config),
-                axios.get('http://localhost:5000/api/riders/available-orders', config),
-                axios.get('http://localhost:5000/api/riders/my-deliveries', config)
+                api.get('/api/riders/profile'),
+                api.get('/api/riders/available-orders'),
+                api.get('/api/riders/my-deliveries')
             ]);
 
             setRider(riderRes.data);
@@ -56,10 +53,7 @@ const RiderDashboard = () => {
 
     const fetchAvailableOrders = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const res = await axios.get('http://localhost:5000/api/riders/available-orders', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await api.get('/api/riders/available-orders');
             setAvailableOrders(res.data);
         } catch (error) {
             console.error('Error fetching available orders:', error);
@@ -68,12 +62,7 @@ const RiderDashboard = () => {
 
     const acceptOrder = async (orderId) => {
         try {
-            const token = localStorage.getItem('token');
-            await axios.post(
-                `http://localhost:5000/api/riders/accept-order/${orderId}`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            await api.post(`/api/riders/accept-order/${orderId}`, {});
             addToast('Order accepted! Start delivery now.', 'success');
             fetchRiderData();
         } catch (error) {
@@ -84,11 +73,9 @@ const RiderDashboard = () => {
 
     const updateDeliveryStatus = async (orderId, status) => {
         try {
-            const token = localStorage.getItem('token');
-            await axios.put(
-                `http://localhost:5000/api/orders/${orderId}/status`,
-                { status },
-                { headers: { Authorization: `Bearer ${token}` } }
+            await api.put(
+                `/api/orders/${orderId}/status`,
+                { status }
             );
             addToast(`Delivery status updated to ${status}`, 'success');
             fetchRiderData();
@@ -100,12 +87,7 @@ const RiderDashboard = () => {
 
     const completeDelivery = async (orderId) => {
         try {
-            const token = localStorage.getItem('token');
-            await axios.post(
-                `http://localhost:5000/api/riders/complete-delivery/${orderId}`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            await api.post(`/api/riders/complete-delivery/${orderId}`, {});
             addToast('Delivery completed! Great job! 🎉', 'success');
             fetchRiderData();
         } catch (error) {

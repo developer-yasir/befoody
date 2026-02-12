@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import axios from 'axios';
+import api from '../utils/api';
 
 const Checkout = () => {
     const { user } = useAuth();
@@ -74,11 +74,7 @@ const Checkout = () => {
 
             console.log('Placing order:', orderData);
 
-            const config = user ? {
-                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-            } : {};
-
-            const response = await axios.post('http://localhost:5000/api/orders', orderData, config);
+            const response = await api.post('/api/orders', orderData);
             console.log('Order placed:', response.data);
 
             clearCart();

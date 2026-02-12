@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 
 const Restaurants = () => {
     const [restaurants, setRestaurants] = useState([]);
@@ -20,7 +20,7 @@ const Restaurants = () => {
 
     const fetchRestaurants = async () => {
         try {
-            const res = await axios.get('http://localhost:5000/api/restaurants');
+            const res = await api.get('/api/restaurants');
             setRestaurants(res.data);
         } catch (error) {
             console.error('Error fetching restaurants:', error);
@@ -92,8 +92,8 @@ const Restaurants = () => {
                                         key={cuisine}
                                         onClick={() => setSelectedCuisine(cuisine)}
                                         className={`btn text-sm py-2 ${selectedCuisine === cuisine
-                                                ? 'btn-primary'
-                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                            ? 'btn-primary'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                             }`}
                                     >
                                         {cuisine}

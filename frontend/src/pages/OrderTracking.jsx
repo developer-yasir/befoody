@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import OrderTimeline from '../components/OrderTimeline';
 
 const OrderTracking = () => {
@@ -12,7 +12,7 @@ const OrderTracking = () => {
     useEffect(() => {
         const fetchOrder = async () => {
             try {
-                const response = await axios.get(`http://localhost:5000/api/orders/track/${id}`);
+                const response = await api.get(`/api/orders/track/${id}`);
                 setOrder(response.data);
             } catch (err) {
                 console.error('Error fetching order:', err);

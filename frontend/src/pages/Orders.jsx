@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import OrderTimeline from '../components/OrderTimeline';
 
 const Orders = () => {
@@ -21,7 +21,7 @@ const Orders = () => {
 
     const fetchOrders = async () => {
         try {
-            const res = await axios.get('http://localhost:5000/api/orders/my-orders');
+            const res = await api.get('/api/orders/my-orders');
             setOrders(res.data);
         } catch (error) {
             console.error('Error fetching orders:', error);

@@ -109,7 +109,7 @@ Here are the credentials for testing different user roles:
 | **Restaurant** | `maria@pizzaparadise.com` | `password123` | Owner of **Pizza Paradise** |
 | **Restaurant** | `kenji@sushimaster.com` | `password123` | Owner of **Sushi Master** |
 | **Restaurant** | `john@burgerhouse.com` | `password123` | Owner of **Burger House** |
-| **Rider** | `alex.rider@befoody.com` | `password123` | Bike Rider |
+| **Rider** | `alex.rider@befoody.com` | `password123` | Bike Rider (Active) |
 | **Rider** | `sarah.rider@befoody.com` | `password123` | Scooter Rider |
 | **Rider** | `mike.rider@befoody.com` | `password123` | Bicycle Rider |
 | **Rider** | `emily.rider@befoody.com` | `password123` | Car Driver |

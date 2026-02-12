@@ -37,7 +37,15 @@ const Register = () => {
         const result = await register(formData.name, formData.email, formData.password, formData.role);
 
         if (result.success) {
-            navigate('/');
+            if (formData.role === 'restaurant') {
+                navigate('/restaurant-dashboard');
+            } else if (formData.role === 'rider') {
+                navigate('/rider-dashboard');
+            } else if (formData.role === 'admin') {
+                navigate('/admin');
+            } else {
+                navigate('/');
+            }
         } else {
             setError(result.message);
         }
@@ -134,6 +142,7 @@ const Register = () => {
                             >
                                 <option value="customer">Customer</option>
                                 <option value="restaurant">Restaurant Owner</option>
+                                <option value="rider">Delivery Rider</option>
                             </select>
                         </div>
 

@@ -15,32 +15,46 @@ import Orders from './pages/Orders';
 import OrderTracking from './pages/OrderTracking';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/AdminDashboard';
+import Dishes from './pages/Dishes';
+import ProductDetail from './pages/ProductDetail';
 
 import RestaurantDashboard from './pages/RestaurantDashboard';
 import RiderDashboard from './pages/RiderDashboard';
+import ProtectedRoute from './components/ProtectedRoute';
+import RiderRedirectRoute from './components/RiderRedirectRoute';
 
 function App() {
   return (
     <AuthProvider>
       <CartProvider>
         <ToastProvider>
-          <Router>
+          <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <div className="min-h-screen bg-gray-50">
               <Navbar />
               <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/restaurants" element={<Restaurants />} />
-                <Route path="/restaurants/:id" element={<RestaurantDetail />} />
-                <Route path="/cart" element={<Cart />} />
-                <Route path="/checkout" element={<Checkout />} />
-                <Route path="/orders" element={<Orders />} />
-                <Route path="/track-order/:id" element={<OrderTracking />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/restaurant-dashboard" element={<RestaurantDashboard />} />
-                <Route path="/rider-dashboard" element={<RiderDashboard />} />
+                <Route element={<RiderRedirectRoute />}>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/restaurants" element={<Restaurants />} />
+                  <Route path="/restaurants/:id" element={<RestaurantDetail />} />
+                  <Route path="/dishes" element={<Dishes />} />
+                  <Route path="/dishes/:id" element={<ProductDetail />} />
+                  <Route path="/cart" element={<Cart />} />
+                  <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/orders" element={<Orders />} />
+                  <Route path="/track-order/:id" element={<OrderTracking />} />
+                  <Route path="/profile" element={<Profile />} />
+                </Route>
+                <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+                  <Route path="/admin" element={<AdminDashboard />} />
+                </Route>
+                <Route element={<ProtectedRoute allowedRoles={['restaurant']} />}>
+                  <Route path="/restaurant-dashboard" element={<RestaurantDashboard />} />
+                </Route>
+                <Route element={<ProtectedRoute allowedRoles={['rider']} />}>
+                  <Route path="/rider-dashboard" element={<RiderDashboard />} />
+                </Route>
               </Routes>
             </div>
           </Router>

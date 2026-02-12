@@ -173,7 +173,10 @@ const RestaurantDetail = () => {
                                     className="card card-hover p-0 overflow-hidden animate-scale-in"
                                     style={{ animationDelay: `${index * 0.03}s` }}
                                 >
-                                    <div className="relative h-48 overflow-hidden group">
+                                    <div
+                                        className="relative h-48 overflow-hidden group cursor-pointer"
+                                        onClick={() => navigate(`/dishes/${item._id}`)}
+                                    >
                                         <img
                                             src={item.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400'}
                                             alt={item.name}
@@ -196,7 +199,10 @@ const RestaurantDetail = () => {
                                         )}
                                     </div>
                                     <div className="p-5">
-                                        <h3 className="text-lg font-heading font-bold text-gray-900 mb-2">
+                                        <h3
+                                            className="text-lg font-heading font-bold text-gray-900 mb-2 cursor-pointer hover:text-primary-500 transition-colors"
+                                            onClick={() => navigate(`/dishes/${item._id}`)}
+                                        >
                                             {item.name}
                                         </h3>
                                         <p className="text-gray-600 text-sm mb-4 line-clamp-2">

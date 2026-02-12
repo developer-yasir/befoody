@@ -5,7 +5,7 @@ import { useToast } from '../context/ToastContext';
 import api from '../utils/api';
 
 const RestaurantDashboard = () => {
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const navigate = useNavigate();
     const { addToast } = useToast();
     const [restaurant, setRestaurant] = useState(null);
@@ -27,6 +27,8 @@ const RestaurantDashboard = () => {
     });
 
     useEffect(() => {
+        if (authLoading) return;
+
         if (!user || user.role !== 'restaurant') {
             navigate('/');
             return;
@@ -36,7 +38,18 @@ const RestaurantDashboard = () => {
         // Poll for new orders every 10 seconds
         const interval = setInterval(fetchOrders, 10000);
         return () => clearInterval(interval);
-    }, [user, navigate]);
+    }, [user, navigate, authLoading]);
+
+    if (authLoading) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin text-6xl mb-4">⚙️</div>
+                    <p className="text-gray-600 font-bold">Verifying Authentication...</p>
+                </div>
+            </div>
+        );
+    }
 
     const fetchRestaurantData = async () => {
         try {
@@ -162,8 +175,10 @@ const RestaurantDashboard = () => {
     }
 
     const pendingOrders = orders.filter(o => o.status === 'pending');
-    const preparingOrders = orders.filter(o => ['confirmed', 'preparing'].includes(o.status));
+    const confirmedOrders = orders.filter(o => o.status === 'confirmed');
+    const preparingOrders = orders.filter(o => o.status === 'preparing');
     const readyOrders = orders.filter(o => o.status === 'ready_for_pickup');
+    const outForDelivery = orders.filter(o => o.status === 'out_for_delivery');
     const completedToday = orders.filter(o =>
         o.status === 'delivered' &&
         new Date(o.createdAt).toDateString() === new Date().toDateString()
@@ -294,30 +309,61 @@ const RestaurantDashboard = () => {
                             </div>
                         )}
 
+                        {/* Confirmed Orders */}
+                        {confirmedOrders.length > 0 && (
+                            <div className="card">
+                                <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                    <span className="text-2xl">✅</span>
+                                    Accepted Orders ({confirmedOrders.length})
+                                </h2>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    {confirmedOrders.map((order) => (
+                                        <div key={order._id} className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+                                            <div className="flex items-start justify-between mb-3">
+                                                <div>
+                                                    <p className="font-bold text-gray-900">Order #{order._id.slice(-8)}</p>
+                                                    <p className="text-sm text-gray-600">
+                                                        Accept time: {new Date(order.updatedAt).toLocaleTimeString()}
+                                                    </p>
+                                                </div>
+                                                <span className="badge bg-blue-100 text-blue-700">Confirmed</span>
+                                            </div>
+                                            <button
+                                                onClick={() => updateOrderStatus(order._id, 'preparing')}
+                                                className="btn btn-primary w-full"
+                                            >
+                                                Start Preparing
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Preparing Orders */}
                         {preparingOrders.length > 0 && (
                             <div className="card">
                                 <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                                     <span className="text-2xl">👨‍🍳</span>
-                                    Preparing ({preparingOrders.length})
+                                    In Kitchen ({preparingOrders.length})
                                 </h2>
                                 <div className="grid md:grid-cols-2 gap-4">
                                     {preparingOrders.map((order) => (
-                                        <div key={order._id} className="border border-gray-200 rounded-lg p-4">
+                                        <div key={order._id} className="border border-yellow-200 rounded-lg p-4 bg-yellow-50">
                                             <div className="flex items-start justify-between mb-3">
                                                 <div>
                                                     <p className="font-bold text-gray-900">Order #{order._id.slice(-8)}</p>
                                                     <p className="text-sm text-gray-600">
-                                                        {order.items.length} items • ${order.totalAmount.toFixed(2)}
+                                                        Cooking... {new Date(order.updatedAt).toLocaleTimeString()}
                                                     </p>
                                                 </div>
-                                                <span className="badge badge-warning">{order.status}</span>
+                                                <span className="badge bg-yellow-100 text-yellow-700">Preparing</span>
                                             </div>
                                             <button
                                                 onClick={() => updateOrderStatus(order._id, 'ready_for_pickup')}
-                                                className="btn btn-success w-full"
+                                                className="btn bg-green-600 text-white hover:bg-green-700 w-full"
                                             >
-                                                Mark as Ready
+                                                Ready for Pickup
                                             </button>
                                         </div>
                                     ))}
@@ -326,11 +372,11 @@ const RestaurantDashboard = () => {
                         )}
 
                         {/* Ready for Pickup */}
-                        {readyOrders.length > 0 && (
+                        {(readyOrders.length > 0 || outForDelivery.length > 0) && (
                             <div className="card">
                                 <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                                    <span className="text-2xl">✅</span>
-                                    Ready for Pickup ({readyOrders.length})
+                                    <span className="text-2xl">📦</span>
+                                    Out for Delivery / Ready ({readyOrders.length + outForDelivery.length})
                                 </h2>
                                 <div className="grid md:grid-cols-2 gap-4">
                                     {readyOrders.map((order) => (
@@ -340,7 +386,18 @@ const RestaurantDashboard = () => {
                                                     <p className="font-bold text-gray-900">Order #{order._id.slice(-8)}</p>
                                                     <p className="text-sm text-gray-600">Waiting for rider pickup</p>
                                                 </div>
-                                                <span className="badge badge-success">Ready</span>
+                                                <span className="badge bg-green-100 text-green-700">Ready</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {outForDelivery.map((order) => (
+                                        <div key={order._id} className="border border-purple-200 rounded-lg p-4 bg-purple-50">
+                                            <div className="flex items-start justify-between mb-2">
+                                                <div>
+                                                    <p className="font-bold text-gray-900">Order #{order._id.slice(-8)}</p>
+                                                    <p className="text-sm text-gray-600">With rider: {order.riderId?.userId?.name || 'Assigned'}</p>
+                                                </div>
+                                                <span className="badge bg-purple-100 text-purple-700">On Way</span>
                                             </div>
                                         </div>
                                     ))}

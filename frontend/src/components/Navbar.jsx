@@ -1,14 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import logo from '../assets/logo.png';
 
 const Navbar = () => {
-    const { user, logout, isAdmin, isRestaurant } = useAuth();
+    const { user, logout, isAdmin, isRestaurant, isRider } = useAuth();
     const { cartItems } = useCart();
     const location = useLocation();
-    const isRider = user?.role === 'rider';
+
+    // Debug logging
+    useEffect(() => {
+        console.log('Navbar Debug:', { user, isAdmin, isRestaurant, isRider });
+    }, [user, isAdmin, isRestaurant, isRider]);
+
     const [scrolled, setScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
@@ -45,9 +50,14 @@ const Navbar = () => {
     const isActive = (path) => location.pathname === path;
 
     const navLinks = [
-        { name: 'Home', path: '/' },
-        { name: 'Restaurants', path: '/restaurants' },
+        { name: 'Home', path: '/', roles: ['guest', 'user'] },
+        { name: 'Restaurants', path: '/restaurants', roles: ['guest', 'user'] },
+        { name: 'Dishes', path: '/dishes', roles: ['guest', 'user'] },
+        { name: 'Dashboard', path: getDashboardLink(), roles: ['admin', 'restaurant', 'rider'] },
     ];
+
+    const currentRole = user?.role || 'guest';
+    const displayLinks = navLinks.filter(link => link.roles.includes(currentRole));
 
     const CartIcon = () => (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -61,9 +71,12 @@ const Navbar = () => {
         </svg>
     );
 
+    const isHomePage = location.pathname === '/';
+    const showSolidNav = scrolled || !isHomePage;
+
     return (
         <nav
-            className={`fixed w-full z-50 transition-all duration-500 ${scrolled ? 'py-3 bg-white/80 backdrop-blur-xl shadow-lg border-b border-white/20' : 'py-5 bg-transparent'
+            className={`fixed w-full z-50 transition-all duration-500 ${showSolidNav ? 'py-3 bg-white/90 backdrop-blur-xl shadow-lg border-b border-gray-100' : 'py-5 bg-transparent'
                 }`}
         >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -74,7 +87,7 @@ const Navbar = () => {
                             <img src={logo} alt="Befoody" className="w-full h-full object-contain" />
                         </div>
                         <div className="flex flex-col">
-                            <span className={`text-2xl font-heading font-black tracking-tighter leading-none transition-colors duration-300 ${scrolled ? 'text-gray-900' : 'text-gray-900 md:text-white'}`}>
+                            <span className={`text-2xl font-heading font-black tracking-tighter leading-none transition-colors duration-300 ${showSolidNav ? 'text-gray-900' : 'text-gray-900 md:text-white'}`}>
                                 Befoody
                             </span>
                             <span className="text-[10px] font-bold tracking-widest text-primary-500 uppercase leading-none mt-0.5">
@@ -84,46 +97,45 @@ const Navbar = () => {
                     </Link>
 
                     {/* Desktop Navigation */}
-                    <div className="hidden md:flex items-center gap-10">
-                        <div className="flex items-center gap-8">
-                            {navLinks.map((link) => (
-                                <Link
-                                    key={link.path}
-                                    to={link.path}
-                                    className={`relative text-sm font-bold tracking-tight transition-all duration-300 hover:text-primary-500 group ${isActive(link.path)
-                                        ? 'text-primary-600'
-                                        : scrolled ? 'text-gray-600' : 'text-white'
-                                        }`}
-                                >
-                                    {link.name}
-                                    <span className={`absolute -bottom-1 left-0 w-0 h-0.5 bg-primary-500 transition-all duration-300 group-hover:w-full ${isActive(link.path) ? 'w-full' : ''}`}></span>
-                                </Link>
-                            ))}
-                        </div>
+                    <div className="hidden md:flex items-center gap-8">
+                        {displayLinks.map((link) => (
+                            <Link
+                                key={link.path}
+                                to={link.path}
+                                className={`relative text-sm font-bold tracking-tight transition-all duration-300 hover:text-primary-500 group ${isActive(link.path)
+                                    ? 'text-primary-600'
+                                    : showSolidNav ? 'text-gray-600' : 'text-white'
+                                    }`}
+                            >
+                                {link.name}
+                                <span className={`absolute -bottom-1 left-0 w-0 h-0.5 bg-primary-500 transition-all duration-300 group-hover:w-full ${isActive(link.path) ? 'w-full' : ''}`}></span>
+                            </Link>
+                        ))}
+                    </div>
 
-                        <div className="h-6 w-px bg-gray-300/30"></div>
+                    {/* Right Side Actions */}
+                    <div className="flex items-center gap-2 md:gap-5">
+                        {/* Cart (Visible for customers/guests) */}
+                        {(!user || (!isRestaurant && !isRider && !isAdmin)) && (
+                            <Link to="/cart" className="relative group p-2.5 rounded-xl hover:bg-primary-50/50 transition-all">
+                                <div className={`transition-colors duration-300 ${showSolidNav ? 'text-gray-700' : 'text-gray-700 md:text-white'}`}>
+                                    <CartIcon />
+                                </div>
+                                {cartItems.length > 0 && (
+                                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary-600 text-[10px] font-bold text-white ring-2 ring-white">
+                                        {cartItems.length}
+                                    </span>
+                                )}
+                            </Link>
+                        )}
 
-                        <div className="flex items-center gap-5">
-                            {/* Cart */}
-                            {user && !isRestaurant && !isRider && !isAdmin && (
-                                <Link to="/cart" className="relative group p-2.5 rounded-xl hover:bg-primary-50/50 transition-all">
-                                    <div className={`transition-colors duration-300 ${scrolled ? 'text-gray-700' : 'text-white'}`}>
-                                        <CartIcon />
-                                    </div>
-                                    {cartItems.length > 0 && (
-                                        <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary-600 text-[10px] font-bold text-white ring-2 ring-white animate-pulse">
-                                            {cartItems.length}
-                                        </span>
-                                    )}
-                                </Link>
-                            )}
-
-                            {/* User Profile / Auth */}
+                        {/* User Profile (Desktop) */}
+                        <div className="hidden md:block">
                             {user ? (
                                 <div className="relative" ref={profileRef}>
                                     <button
                                         onClick={() => setProfileOpen(!profileOpen)}
-                                        className={`flex items-center gap-3 pl-1.5 pr-4 py-1.5 rounded-2xl border transition-all duration-300 group ${scrolled
+                                        className={`flex items-center gap-3 pl-1.5 pr-4 py-1.5 rounded-2xl border transition-all duration-300 group ${showSolidNav
                                             ? 'bg-white border-gray-100 hover:border-primary-200 hover:shadow-md'
                                             : 'bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/20 text-white'
                                             }`}
@@ -131,15 +143,14 @@ const Navbar = () => {
                                         <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white shadow-lg shadow-primary-500/20">
                                             <UserIcon />
                                         </div>
-                                        <span className={`text-sm font-bold truncate max-w-[120px] ${scrolled ? 'text-gray-700' : 'text-white'}`}>
+                                        <span className={`text-sm font-bold truncate max-w-[120px] ${showSolidNav ? 'text-gray-700' : 'text-white'}`}>
                                             {user.name}
                                         </span>
-                                        <svg className={`w-4 h-4 transition-transform duration-300 ${profileOpen ? 'rotate-180' : ''} ${scrolled ? 'text-gray-400' : 'text-white/50'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <svg className={`w-4 h-4 transition-transform duration-300 ${profileOpen ? 'rotate-180' : ''} ${showSolidNav ? 'text-gray-400' : 'text-white/50'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                         </svg>
                                     </button>
 
-                                    {/* Dropdown menu */}
                                     {profileOpen && (
                                         <div className="absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 animate-scale-in origin-top-right overflow-hidden">
                                             <div className="px-5 py-4 bg-gray-50/50 border-b border-gray-100">
@@ -171,7 +182,7 @@ const Navbar = () => {
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-4">
-                                    <Link to="/login" className={`text-sm font-bold transition-colors ${scrolled ? 'text-gray-600 hover:text-primary-600' : 'text-white/80 hover:text-white'}`}>
+                                    <Link to="/login" className={`text-sm font-bold transition-colors ${showSolidNav ? 'text-gray-600 hover:text-primary-600' : 'text-white/80 hover:text-white'}`}>
                                         Sign In
                                     </Link>
                                     <Link to="/register" className="relative h-11 flex items-center px-8 rounded-2xl bg-primary-600 text-white text-sm font-black shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 transform hover:-translate-y-0.5 transition-all">
@@ -180,22 +191,22 @@ const Navbar = () => {
                                 </div>
                             )}
                         </div>
-                    </div>
 
-                    {/* Mobile Toggle */}
-                    <button
-                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                        className={`md:hidden p-2.5 rounded-xl transition-all ${scrolled
-                            ? 'bg-gray-100 text-gray-900'
-                            : 'bg-white/10 backdrop-blur-md text-white border border-white/20'
-                            }`}
-                    >
-                        {mobileMenuOpen ? (
-                            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                        ) : (
-                            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
-                        )}
-                    </button>
+                        {/* Mobile Toggle */}
+                        <button
+                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            className={`md:hidden p-2.5 rounded-xl transition-all ${showSolidNav
+                                ? 'bg-gray-100 text-gray-900'
+                                : 'bg-white/10 backdrop-blur-md text-white border border-white/20'
+                                }`}
+                        >
+                            {mobileMenuOpen ? (
+                                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            ) : (
+                                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+                            )}
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -218,7 +229,7 @@ const Navbar = () => {
                             )}
 
                             <div className="space-y-2">
-                                {navLinks.map((link) => (
+                                {displayLinks.map((link) => (
                                     <Link
                                         key={link.path}
                                         to={link.path}
@@ -226,10 +237,32 @@ const Navbar = () => {
                                             ? 'bg-primary-50 text-primary-700'
                                             : 'text-gray-700 hover:bg-gray-50'
                                             }`}
+                                        onClick={() => setMobileMenuOpen(false)} // Close mobile menu on link click
                                     >
                                         {link.name}
                                     </Link>
                                 ))}
+                                {user && !isAdmin && !isRestaurant && ( // Add specific links for non-admin/restaurant users
+                                    user?.role === 'rider' ? (
+                                        <Link
+                                            to="/rider-dashboard"
+                                            className="flex items-center px-4 py-4 rounded-2xl text-base font-black text-gray-700 hover:bg-gray-50"
+                                            onClick={() => setMobileMenuOpen(false)}
+                                        >
+                                            <span className="text-lg mr-2">🚴</span>
+                                            Rider Dashboard
+                                        </Link>
+                                    ) : (
+                                        <Link
+                                            to="/orders"
+                                            className="flex items-center px-4 py-4 rounded-2xl text-base font-black text-gray-700 hover:bg-gray-50"
+                                            onClick={() => setMobileMenuOpen(false)}
+                                        >
+                                            <span className="text-lg mr-2">🥡</span>
+                                            My Orders
+                                        </Link>
+                                    )
+                                )}
                             </div>
 
                             {user ? (
@@ -260,4 +293,4 @@ const Navbar = () => {
     );
 };
 
-export default Navbar;
+export default memo(Navbar);

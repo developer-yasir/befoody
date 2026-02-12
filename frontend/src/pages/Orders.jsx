@@ -16,6 +16,10 @@ const Orders = () => {
             navigate('/login');
             return;
         }
+        if (user.role === 'rider') {
+            navigate('/rider-dashboard');
+            return;
+        }
         fetchOrders();
     }, [user]);
 

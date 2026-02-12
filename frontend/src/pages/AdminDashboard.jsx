@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 
 const AdminDashboard = () => {
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const navigate = useNavigate();
     const [stats, setStats] = useState({
         totalUsers: 0,
@@ -20,12 +20,25 @@ const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState('overview');
 
     useEffect(() => {
+        if (authLoading) return;
+
         if (!user || user.role !== 'admin') {
             navigate('/');
             return;
         }
         fetchDashboardData();
-    }, [user, navigate]);
+    }, [user, navigate, authLoading]);
+
+    if (authLoading) {
+        return (
+            <div className="min-h-screen bg-blue-50 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin text-6xl mb-4">⚙️</div>
+                    <p className="text-gray-600 font-bold">Verifying Admin Access...</p>
+                </div>
+            </div>
+        );
+    }
 
     const fetchDashboardData = async () => {
         try {
@@ -195,11 +208,14 @@ const AdminDashboard = () => {
                                         </div>
                                         <div className="text-right">
                                             <p className="font-bold text-gray-900">${order.totalAmount.toFixed(2)}</p>
-                                            <span className={`text-xs px-2 py-1 rounded-full ${order.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                                            <span className={`text-[10px] px-2 py-1 rounded-full font-black uppercase tracking-wider ${order.status === 'delivered' ? 'bg-green-100 text-green-700' :
                                                 order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                                                    'bg-yellow-100 text-yellow-700'
+                                                    order.status === 'preparing' ? 'bg-yellow-100 text-yellow-700' :
+                                                        order.status === 'confirmed' ? 'bg-blue-100 text-blue-700' :
+                                                            order.status === 'ready_for_pickup' ? 'bg-orange-100 text-orange-700' :
+                                                                'bg-gray-100 text-gray-700'
                                                 }`}>
-                                                {order.status}
+                                                {order.status.replace(/_/g, ' ')}
                                             </span>
                                         </div>
                                     </div>

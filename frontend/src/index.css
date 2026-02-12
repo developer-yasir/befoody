@@ -3,12 +3,88 @@
 @theme {
   --color-primary-50: #fff7ed;
   --color-primary-100: #ffedd5;
+  --color-primary-200: #fed7aa;
+  --color-primary-300: #fdba74;
+  --color-primary-400: #fb923c;
   --color-primary-500: #f97316;
   --color-primary-600: #ea580c;
   --color-primary-700: #c2410c;
+
+  --animate-slow-zoom: slow-zoom 20s ease-in-out infinite;
+  --animate-fade-in-up: fade-in-up 0.8s ease-out forwards;
+  --animate-scale-in: scale-in 0.3s ease-out forwards;
+
+  @keyframes slow-zoom {
+
+    0%,
+    100% {
+      transform: scale(1);
+    }
+
+    50% {
+      transform: scale(1.1);
+    }
+  }
+
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
 }
 
 /* Custom Utilities if needed */
 .glass-effect {
   @apply backdrop-blur-md bg-white/30 border border-white/20;
+}
+
+.card {
+  @apply bg-white rounded-3xl shadow-lg border border-gray-100 p-6 transition-all duration-300;
+}
+
+.btn {
+  @apply px-6 py-3 rounded-2xl font-bold transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-primary {
+  @apply bg-orange-600 text-white shadow-lg shadow-orange-500/25 hover:bg-orange-700 hover:shadow-orange-500/40;
+}
+
+.btn-secondary {
+  @apply bg-white text-gray-700 border border-gray-100 hover:bg-gray-50;
+}
+
+.input-field {
+  @apply w-full px-4 py-3 rounded-2xl border border-gray-100 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all;
+}
+
+.badge {
+  @apply px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

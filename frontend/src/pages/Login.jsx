@@ -23,30 +23,7 @@ const Login = () => {
                 navigate('/admin');
             } else if (user?.role === 'restaurant') {
                 navigate('/restaurant-dashboard');
-            } else if (user?.role === 'rider') { // Assuming rider role is 'rider' or checks against Rider model existance
-                // Check if user is also a rider in the Rider model? 
-                // The role in User model for rider was 'customer' in seed script, but let's check.
-                // Wait, seedUsersAndRiders.js says: role: 'customer' for riders.
-                // But typically we should have a 'rider' role or check specific permissions.
-                // Let's assume for now the user role might be updated or handled. 
-                // Ah, wait. In seedUsersAndRiders.js:
-                // role: 'customer'
-                // But later:
-                // const rider = await Rider.create({ userId: user._id, ... });
-
-                // If the User model doesn't have 'rider' role, this redirect won't work for them if they just log in as customer.
-                // However, the requested requirement says "when log in as a admin redirect to admin dashboard...".
-                // I should check if the user object returned from login has the updated role.
-                // If not, I might need to adjust logic or assume 'rider' role is set.
-                // Let's check User model/seed again.
-                // Actually, let's look at what `User` model says.
-                // If the seed script sets role 'customer', then `user.role` will be 'customer'.
-                // I might need to check if they are a rider.
-
-                // Let's Stick to the requested logic: "when log in as a resturant owner redirect to resturant dashboard same for other".
-                // Admin has role 'admin'. Restaurant owner has role 'restaurant'.
-                // Rider has role... 'customer'? 
-                // Let's double check the seed.
+            } else if (user?.role === 'rider') {
                 navigate('/rider-dashboard');
             } else {
                 navigate('/');

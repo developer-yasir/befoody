@@ -9,9 +9,24 @@ dotenv.config();
 
 const app = express();
 const httpServer = http.createServer(app);
+
+// CORS config
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'https://developer-yasir.github.io',
+    process.env.FRONTEND_URL
+].filter(Boolean);
+
 const io = new Server(httpServer, {
     cors: {
-        origin: 'http://localhost:5173',
+        origin: (origin, callback) => {
+            if (!origin || allowedOrigins.includes(origin) || allowedOrigins.some(o => origin.startsWith(o))) {
+                callback(null, true);
+            } else {
+                callback(new Error('Not allowed by CORS'));
+            }
+        },
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
     },
 });
@@ -19,7 +34,16 @@ const io = new Server(httpServer, {
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin) || allowedOrigins.some(o => origin.startsWith(o))) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads'));

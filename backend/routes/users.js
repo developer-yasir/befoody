@@ -1,54 +1,52 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
 const User = require('../models/User');
+const { auth, adminAuth } = require('../middleware/auth');
 
-// @route   GET api/users/me
-// @desc    Get current user's profile
-// @access  Private
+// Get current user profile
 router.get('/me', auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id).select('-password');
-    if (!user) {
-      return res.status(404).json({ msg: 'User not found' });
+    try {
+        const user = await User.findById(req.userId).select('-password');
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
-    res.json(user);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
-  }
 });
 
-// @route   PUT api/users/me
-// @desc    Update current user's profile
-// @access  Private
+// Update user profile
 router.put('/me', auth, async (req, res) => {
-  const { name, address, phone } = req.body;
+    try {
+        const { name, phone, address } = req.body;
+        const user = await User.findByIdAndUpdate(
+            req.userId,
+            { name, phone, address },
+            { new: true }
+        ).select('-password');
 
-  // Build user object
-  const userFields = {};
-  if (name) userFields.name = name;
-  if (address) userFields.address = address;
-  if (phone) userFields.phone = phone;
-
-  try {
-    let user = await User.findById(req.user.id);
-
-    if (!user) {
-      return res.status(404).json({ msg: 'User not found' });
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
+});
 
-    user = await User.findByIdAndUpdate(
-      req.user.id,
-      { $set: userFields },
-      { new: true }
-    ).select('-password');
+// Get all users (admin only)
+router.get('/', adminAuth, async (req, res) => {
+    try {
+        const users = await User.find().select('-password');
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
 
-    res.json(user);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
-  }
+// Delete user (admin only)
+router.delete('/:id', adminAuth, async (req, res) => {
+    try {
+        await User.findByIdAndDelete(req.params.id);
+        res.json({ message: 'User deleted' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
 });
 
 module.exports = router;

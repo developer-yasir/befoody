@@ -1,209 +1,207 @@
-# 🍔 Befoody - Food Delivery Application
+# 🍔 Befoody - Your Local Neighborhood Food Hub
 
-A modern, full-stack food delivery application built with React, Node.js, Express, and MongoDB.
+Welcome to **Befoody**! This is a modern, high-performance, and fully responsive food delivery platform. Whether you're a hungry customer, a busy restaurant owner, or a delivery hero, Befoody provides a seamless experience for everyone in the food ecosystem.
 
-## 🚀 Features
+🚀 **Live Demo:** [Check it out here!](https://developer-yasir.github.io/befoody)
 
-- **Customer Features**
-  - Browse restaurants and menu items
-  - Guest checkout (no account required)
-  - Advanced filters (cuisine, price, delivery time)
-  - Promo codes and discounts
-  - Live order tracking
-  - Order history
-  
-- **Restaurant Dashboard**
-  - Manage incoming orders
-  - Update order status
-  - Menu management (CRUD operations)
-  - Sales analytics
+---
 
-- **Delivery Rider Dashboard**
-  - View available orders
-  - Accept/decline deliveries
-  - Track active deliveries
-  - Earnings overview
+## ✨ What makes Befoody special?
 
-- **Admin Dashboard**
-  - User management
-  - Restaurant management
-  - Order overview
-  - System analytics
+Befoody isn't just another food app; it's built with a **Mobile-First** mindset. We've dedicated significant effort to ensuring that both the **Rider** and **Restaurant** dashboards feel like premium native apps on your phone.
 
-## 🛠️ Tech Stack
+### 📱 Dashboard Deep-Dive
+- **Premium Rider App:** 
+  - **Online/Offline Toggle:** Riders can control their availability.
+  - **Live Order View:** Real-time updates for active deliveries with map indicators.
+  - **Earnings Insights:** Comprehensive view of daily and total earnings.
+  - **Mobile-First Navigation:** Bottom navigation for quick access to Home, Earnings, History, and Profile.
+- **Smart Kitchen Hub (Restaurant):** 
+  - **Live Kanban Board:** Efficiently manage orders through status columns (New, Kitchen, Ready, Out).
+  - **Menu Management:** Real-time availability toggles, price updates, and item deletion.
+  - **Mobile-Specific Layouts:** Tabbed views for orders, menu, and analytics on smaller screens.
+- **Beautiful Customer Experience:** 
+  - **Guest Checkout:** Order food without needing to create an account.
+  - **Advanced Search & Filtering:** Filter by cuisine types, price ranges, and ratings.
+  - **Live Tracking Timeline:** Visual progress bar for your order's journey.
 
-**Frontend:**
-- React 18
-- Vite
-- Tailwind CSS
-- React Router DOM
-- Axios
-- Socket.IO Client
+---
 
-**Backend:**
-- Node.js
-- Express
-- MongoDB with Mongoose
-- JWT Authentication
-- Socket.IO
-- Bcrypt
+## 🏗️ Project Structure
 
-## 📦 Installation
+Explore the codebase with ease:
 
-### Prerequisites
-- Node.js (v14 or higher)
-- MongoDB (local or Atlas)
+### **Frontend (`/frontend`)**
+- `src/components/`: Reusable UI components (Navbar, Footer, Modals).
+- `src/components/rider/`: Mobile-specific sub-components for the Rider dashboard.
+- `src/components/restaurant/`: Mobile-specific navigation and UI for restaurants.
+- `src/pages/`: Main page views (Home, Checkout, Dashboards).
+- `src/context/`: State management for Authentication and Toast notifications.
+- `src/services/`: API interaction logic using Axios.
+- `src/utils/`: Shared helper functions and constants.
 
-### Backend Setup
+### **Backend (`/backend`)**
+- `index.js`: Main entry point, server configuration, and Socket.IO initialization.
+- `models/`: Mongoose schemas for Users, Restaurants, FoodItems, and Orders.
+- `routes/`: Express API routes categorized by resource.
+- `middleware/`: Custom logic for authentication check and error handling.
+- `uploads/`: Static storage for uploaded product and restaurant images.
 
+---
+
+## 🛠️ Built With
+
+We use a modern tech stack to ensure speed, security, and scalability:
+
+- **Frontend:** React 18 & Vite (Blazing fast development and builds)
+- **Styling:** Tailwind CSS (Modern, utility-first design)
+- **Backend:** Node.js & Express (Robust and flexible API)
+- **Database:** MongoDB & Mongoose (Reliable data storage)
+- **Real-time:** Socket.IO (Live order updates and rider tracking)
+- **Auth:** JWT (Secure and stateless authentication)
+
+---
+
+## 🚀 Getting Started
+
+Want to run Befoody on your local machine? It's easy!
+
+### 1. Clone & Install
+```bash
+git clone https://github.com/developer-yasir/befoody.git
+cd befoody
+```
+
+### 2. Backend Setup
 ```bash
 cd backend
 npm install
 ```
-
-Create a `.env` file in the backend directory:
+Create a `.env` file in `/backend`:
 ```env
 PORT=5000
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret_key
+FRONTEND_URL=http://localhost:5173
 ```
-
-Seed the database:
-```bash
-# Create admin user
-node createAdmin.js
-
-# Seed restaurants and food items
-node seedData.js
-
-# Seed restaurant owners and riders
-node seedUsersAndRiders.js
-```
-
-Start the backend server:
+Start the server:
 ```bash
 npm run dev
 ```
 
-### Frontend Setup
-
+### 3. Frontend Setup
 ```bash
-cd frontend
+cd ../frontend
 npm install
+```
+Create a `.env` file in `/frontend`:
+```env
+VITE_API_BASE_URL=http://localhost:5000
+```
+Start the app:
+```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:5173`
+---
 
-## 🔐 Test Accounts
+## 🔐 Try it out (Demo Accounts)
 
-## 🔐 Test Accounts
+No need to register! Use these pre-configured accounts to explore the different roles:
 
-Here are the credentials for testing different user roles:
+| Role | Email | Password | What to expect? |
+|------|-------|----------|-----------------|
+| **Admin** | `admin@befoody.com` | `admin123` | Full control over the system |
+| **Restaurant** | `owner@restaurant.com` | `password123` | Manage orders & update your menu |
+| **Rider** | `alex.rider@befoody.com` | `password123` | Go online and start delivering |
+| **Customer** | `john.doe@gmail.com` | `password123` | Order your favorite food |
 
-### ⚡ Quick Logins
+> [!TIP]
+> You can also use the **Quick Demo Access** buttons on the login page to jump right in!
 
-| Role | Email | Password | Details |
-|------|-------|----------|---------|
-| **Admin** | `admin@befoody.com` | `admin123` | Full system access |
-| **Restaurant** | `maria@pizzaparadise.com` | `password123` | Owner of **Pizza Paradise** |
-| **Restaurant** | `kenji@sushimaster.com` | `password123` | Owner of **Sushi Master** |
-| **Restaurant** | `john@burgerhouse.com` | `password123` | Owner of **Burger House** |
-| **Rider** | `alex.rider@befoody.com` | `password123` | Bike Rider (Active) |
-| **Rider** | `sarah.rider@befoody.com` | `password123` | Scooter Rider |
-| **Rider** | `mike.rider@befoody.com` | `password123` | Bicycle Rider |
-| **Rider** | `emily.rider@befoody.com` | `password123` | Car Driver |
+---
 
-## 💳 Promo Codes
+## 🗺️ How the Magic Happens (Order Flow)
 
-Test these promo codes at checkout:
+1. **Hungry?** A customer places an order (works even as a guest!).
+2. **Ping!** The restaurant gets a real-time notification on their **Kitchen Hub**.
+3. **Cooking...** Restaurant confirms and prepares the food.
+4. **Ding!** Once ready, a notification goes out to nearby **Riders**.
+5. **On the move!** A rider accepts, picks up the food, and delivers it to your door.
+6. **Yum!** Order delivered.
 
-- **FIRST50** - 50% off your order
-- **SAVE20** - 20% off your order
-- **FREEDEL** - Free delivery
+---
 
-## 🎯 Order Flow
+---
 
-1. **Customer** places order (guest or authenticated)
-2. **Restaurant** receives notification → Confirms order
-3. **Restaurant** prepares food → Marks as "Ready for Pickup"
-4. **Rider** sees available order → Accepts delivery
-5. **Rider** picks up and delivers → Marks as "Delivered"
+## 🔌 API Reference (Key Endpoints)
 
-## 📱 Application Routes
+Full API documentation for developers:
 
-### Customer Routes
-- `/` - Home page
-- `/restaurants` - Browse all restaurants
-- `/restaurants/:id` - Restaurant detail & menu
-- `/cart` - Shopping cart
-- `/checkout` - Checkout (guest or authenticated)
-- `/orders` - Order history (authenticated only)
-- `/profile` - User profile (authenticated only)
+### **Authentication**
+- `POST /api/auth/register`: Create a new user account.
+- `POST /api/auth/login`: Authenticate user and receive JWT.
 
-### Dashboard Routes
-- `/admin` - Admin dashboard
-- `/restaurant-dashboard` - Restaurant owner dashboard
-- `/rider-dashboard` - Delivery rider dashboard
+### **Restaurants & Menu**
+- `GET /api/restaurants`: Fetch all active restaurants.
+- `GET /api/restaurants/:id`: Retrieve detailed info and full menu for a specific restaurant.
+- `POST /api/fooditems`: (Restricted) Add new items to a restaurant's menu.
 
-## 🎨 Design Features
+### **Order Management**
+- `POST /api/orders`: Create a new order (Guest friendly!).
+- `GET /api/orders/my-orders`: Retrieve order history for the logged-in user.
+- `PUT /api/orders/:id/status`: (Restricted) Update the status of an order (Kitchen flow).
 
-- Modern gradient UI with custom color scheme
-- Toast notifications for real-time feedback
-- Skeleton loading states
-- Responsive design (mobile, tablet, desktop)
-- Smooth animations and transitions
-- Live order tracking with visual timeline
+### **Rider Operations**
+- `GET /api/riders/available-orders`: View orders waiting for a rider.
+- `POST /api/riders/accept-order`: Claim an order for delivery.
 
-## 🔧 API Endpoints
+---
 
-### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login user
+## 🛠️ Troubleshooting
 
-### Restaurants
-- `GET /api/restaurants` - Get all restaurants
-- `GET /api/restaurants/:id` - Get restaurant by ID
-- `POST /api/restaurants` - Create restaurant (admin/restaurant)
-- `PUT /api/restaurants/:id` - Update restaurant
-- `DELETE /api/restaurants/:id` - Delete restaurant
+Facing issues? Check these common solutions:
 
-### Food Items
-- `GET /api/fooditems` - Get all food items
-- `GET /api/fooditems/:id` - Get food item by ID
-- `POST /api/fooditems` - Create food item
-- `PUT /api/fooditems/:id` - Update food item
-- `DELETE /api/fooditems/:id` - Delete food item
+- **MongoDB Connection Error:** Ensure your `MONGO_URI` is correct and your IP is whitelisted in MongoDB Atlas.
+- **Images Not Loading:** Check if the backend is running and the `/uploads` folder is accessible.
+- **Socket Disconnects:** Ensure the `FRONTEND_URL` in the backend `.env` matches your local development port.
+- **Role Permission Denied:** Verify your user has the correct role (admin, restaurant, or rider) in the database.
 
-### Orders
-- `POST /api/orders` - Create order (guest or authenticated)
-- `GET /api/orders/my-orders` - Get user orders (authenticated)
-- `PUT /api/orders/:id/status` - Update order status
-- `GET /api/orders/admin/all` - Get all orders (admin)
+---
 
-### Riders
-- `POST /api/riders/register` - Register as rider
-- `GET /api/riders/available-orders` - Get available orders
-- `POST /api/riders/accept-order` - Accept order
-- `PUT /api/riders/complete-delivery/:orderId` - Complete delivery
-- `GET /api/riders/my-deliveries` - Get rider's deliveries
+## 🔮 Future Roadmap
+- [ ] **Apple/Google Pay Integration**: Seamless checkout experience.
+- [ ] **Push Notifications**: Real-time alerts even when the app is closed.
+- [ ] **Rider Route Optimization**: AI-powered delivery paths.
+- [ ] **Customer Reviews & Ratings**: Allowing users to share their food experiences.
 
-## 🌟 Key Features Implemented
+---
 
-✅ Guest checkout  
-✅ Real-time order updates (Socket.IO)  
-✅ Advanced restaurant filters  
-✅ Promo code system  
-✅ Live order tracking  
-✅ Multiple user roles (customer, restaurant, rider, admin)  
-✅ Toast notifications  
-✅ Responsive design  
-✅ Order timeline visualization  
+## 🎨 Architecture Overview
+
+```mermaid
+graph TD
+    User((User)) -->|Browser| Frontend[React Frontend]
+    Frontend -->|API Calls / Socket| Backend[Node/Express Backend]
+    Backend -->|CRUD| DB[(MongoDB Atlas)]
+    Backend -->|Events| Socket[Socket.IO Engine]
+    Socket -->|Real-time Updates| Frontend
+```
+
+---
+
+## 🤝 Contribution & Feedback
+
+We love community feedback! If you find a bug or have a feature idea, feel free to open an issue or submit a pull request.
+
+- **Found a bug?** Open an Issue.
+- **Want to help?** PRs are welcome!
+- **Just want to chat?** Reach out to the team.
+
+---
 
 ## 📝 License
 
-MIT
+Distributed under the **MIT License**. See `LICENSE` for more information.
 
-## 👨‍💻 Developer
-
-Built with ❤️ for Befoody
+Built with ❤️ by [Yasir](https://github.com/developer-yasir)

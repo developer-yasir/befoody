@@ -10,28 +10,57 @@ const Login = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleDemoLogin = async (role) => {
+        let demoEmail = '';
+        let demoPassword = 'password123';
+
+        switch (role) {
+            case 'admin':
+                demoEmail = 'admin@befoody.com';
+                break;
+            case 'restaurant':
+                demoEmail = 'owner@restaurant.com';
+                break;
+            case 'rider':
+                demoEmail = 'alex.rider@befoody.com';
+                break;
+            case 'customer':
+                demoEmail = 'john.doe@gmail.com';
+                break;
+            default:
+                return;
+        }
+
+        setEmail(demoEmail);
+        setPassword(demoPassword);
+
+        // Optional: auto-submit or just fill
+        // Here we just fill the form for clarity, user can click sign in, or we can call login directly
+        // Let's call login directly for better UX
+        handleLoginDirectly(demoEmail, demoPassword);
+    };
+
+    const handleLoginDirectly = async (emailToUse, passwordToUse) => {
         setError('');
         setLoading(true);
 
-        const result = await login(email, password);
+        const result = await login(emailToUse, passwordToUse);
 
         if (result.success) {
             const user = result.user;
-            if (user?.role === 'admin') {
-                navigate('/admin');
-            } else if (user?.role === 'restaurant') {
-                navigate('/restaurant-dashboard');
-            } else if (user?.role === 'rider') {
-                navigate('/rider-dashboard');
-            } else {
-                navigate('/');
-            }
+            if (user?.role === 'admin') navigate('/admin');
+            else if (user?.role === 'restaurant') navigate('/restaurant-dashboard');
+            else if (user?.role === 'rider') navigate('/rider-dashboard');
+            else navigate('/');
         } else {
             setError(result.message);
         }
         setLoading(false);
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        handleLoginDirectly(email, password);
     };
 
     return (
@@ -44,7 +73,7 @@ const Login = () => {
                     <p className="text-gray-600">Sign in to your account</p>
                 </div>
 
-                <div className="card">
+                <div className="card mb-6">
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {error && (
                             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
@@ -96,6 +125,40 @@ const Login = () => {
                                 Sign up
                             </Link>
                         </p>
+                    </div>
+                </div>
+
+                <div className="text-center">
+                    <p className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-4">— Quick Demo Access —</p>
+                    <div className="grid grid-cols-4 gap-2">
+                        <button
+                            onClick={() => handleDemoLogin('admin')}
+                            className="flex flex-col items-center justify-center p-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all group"
+                        >
+                            <span className="text-lg mb-1 group-hover:scale-110 transition-transform">⚡️</span>
+                            <span className="text-[10px] font-bold text-gray-700">Admin</span>
+                        </button>
+                        <button
+                            onClick={() => handleDemoLogin('restaurant')}
+                            className="flex flex-col items-center justify-center p-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all group"
+                        >
+                            <span className="text-lg mb-1 group-hover:scale-110 transition-transform">🍳</span>
+                            <span className="text-[10px] font-bold text-gray-700">Rest.</span>
+                        </button>
+                        <button
+                            onClick={() => handleDemoLogin('rider')}
+                            className="flex flex-col items-center justify-center p-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all group"
+                        >
+                            <span className="text-lg mb-1 group-hover:scale-110 transition-transform">🚴</span>
+                            <span className="text-[10px] font-bold text-gray-700">Rider</span>
+                        </button>
+                        <button
+                            onClick={() => handleDemoLogin('customer')}
+                            className="flex flex-col items-center justify-center p-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all group"
+                        >
+                            <span className="text-lg mb-1 group-hover:scale-110 transition-transform">👤</span>
+                            <span className="text-[10px] font-bold text-gray-700">User</span>
+                        </button>
                     </div>
                 </div>
             </div>

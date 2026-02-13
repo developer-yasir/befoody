@@ -57,7 +57,8 @@ const Navbar = () => {
     ];
 
     const currentRole = user?.role || 'guest';
-    const displayLinks = navLinks.filter(link => link.roles.includes(currentRole));
+    // If rider, show NO links in main navigation (they only get the profile dropdown)
+    const displayLinks = currentRole === 'rider' ? [] : navLinks.filter(link => link.roles.includes(currentRole));
 
     const CartIcon = () => (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -158,16 +159,13 @@ const Navbar = () => {
                                                 <p className="text-sm font-black text-gray-900 truncate mt-0.5">{user.email}</p>
                                             </div>
                                             <div className="p-2">
-                                                {(isAdmin || isRestaurant || isRider) && (
+                                                {/* Rider Dashboard link removed from dropdown as they stay on dashboard */}
+                                                {isAdmin || isRestaurant ? (
                                                     <Link to={getDashboardLink()} className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors">
                                                         <span>📊</span> Dashboard
                                                     </Link>
-                                                )}
-                                                {!isAdmin && !isRestaurant && !isRider && (
-                                                    <Link to="/orders" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors">
-                                                        <span>🥡</span> My Orders
-                                                    </Link>
-                                                )}
+                                                ) : null}
+
                                                 <Link to="/profile" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors">
                                                     <span>⚙️</span> Account Settings
                                                 </Link>

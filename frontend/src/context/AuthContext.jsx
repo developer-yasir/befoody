@@ -17,6 +17,7 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        console.log('AuthContext: Token Changed:', token);
         if (token) {
             fetchUser();
         } else {
@@ -26,7 +27,12 @@ export const AuthProvider = ({ children }) => {
 
     const fetchUser = async () => {
         try {
+            console.log('AuthContext: Fetching user...');
             const response = await api.get('/api/users/me');
+            console.log('AuthContext: User fetched:', response.data);
+            if (!response.data.role) {
+                console.error('AuthContext: CRITICAL - User has no role!', response.data);
+            }
             setUser(response.data);
         } catch (error) {
             console.error('Error fetching user:', error);

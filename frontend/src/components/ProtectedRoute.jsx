@@ -18,6 +18,10 @@ const ProtectedRoute = ({ allowedRoles }) => {
     }
 
     if (allowedRoles && !allowedRoles.includes(user.role)) {
+        console.log('ProtectedRoute: Access Denied');
+        console.log('User Role:', user.role);
+        console.log('Allowed Roles:', allowedRoles);
+
         // Redirect to appropriate dashboard based on role or home
         if (user.role === 'admin') return <Navigate to="/admin" replace />;
         if (user.role === 'restaurant') return <Navigate to="/restaurant-dashboard" replace />;

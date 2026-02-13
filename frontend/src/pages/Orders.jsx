@@ -1,32 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import api from '../utils/api';
-import OrderTimeline from '../components/OrderTimeline';
+import { useAuth } from '../context/AuthContext';
 
 const Orders = () => {
-    const { user } = useAuth();
-    const navigate = useNavigate();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState('all');
+    const { user } = useAuth();
 
     useEffect(() => {
-        if (!user) {
-            navigate('/login');
-            return;
-        }
-        if (user.role === 'rider') {
-            navigate('/rider-dashboard');
-            return;
-        }
         fetchOrders();
-    }, [user]);
+    }, []);
 
     const fetchOrders = async () => {
         try {
-            const res = await api.get('/api/orders/my-orders');
-            setOrders(res.data);
+            const response = await api.get('/api/orders/my-orders'); // Ensure this matches backend route
+            setOrders(response.data);
         } catch (error) {
             console.error('Error fetching orders:', error);
         } finally {
@@ -34,180 +23,67 @@ const Orders = () => {
         }
     };
 
-    const handleReorder = (order) => {
-        // Navigate to restaurant with items
-        navigate(`/restaurants/${order.restaurantId._id}`);
-    };
-
-    const getStatusColor = (status) => {
-        const colors = {
-            pending: 'bg-yellow-100 text-yellow-800',
-            confirmed: 'bg-blue-100 text-blue-800',
-            preparing: 'bg-purple-100 text-purple-800',
-            ready_for_pickup: 'bg-orange-100 text-orange-800',
-            out_for_delivery: 'bg-indigo-100 text-indigo-800',
-            delivered: 'bg-green-100 text-green-800',
-            cancelled: 'bg-red-100 text-red-800'
-        };
-        return colors[status] || 'bg-gray-100 text-gray-800';
-    };
-
-    const filteredOrders = orders.filter(order => {
-        if (filter === 'all') return true;
-        if (filter === 'active') return !['delivered', 'cancelled'].includes(order.status);
-        if (filter === 'completed') return order.status === 'delivered';
-        return true;
-    });
-
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 py-8">
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="skeleton h-12 w-64 mb-8"></div>
-                    <div className="space-y-4">
-                        {[...Array(3)].map((_, i) => (
-                            <div key={i} className="card">
-                                <div className="skeleton h-32"></div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+            <div className="flex justify-center items-center min-h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-4xl font-heading font-bold text-gray-900 mb-2">
-                        My <span className="text-gradient">Orders</span>
-                    </h1>
-                    <p className="text-gray-600">Track and manage your orders</p>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 pt-24">
+            <h1 className="text-3xl font-heading font-bold text-gray-900 mb-8">My Orders</h1>
+
+            {orders.length === 0 ? (
+                <div className="text-center py-12">
+                    <div className="text-6xl mb-4">🥡</div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">No orders yet</h2>
+                    <p className="text-gray-600 mb-8">Start exploring delicious food from our restaurants!</p>
+                    <Link to="/restaurants" className="btn btn-primary">
+                        Browse Restaurants
+                    </Link>
                 </div>
-
-                {/* Filter Tabs */}
-                <div className="flex gap-3 mb-8">
-                    <button
-                        onClick={() => setFilter('all')}
-                        className={`btn ${filter === 'all' ? 'btn-primary' : 'btn-ghost'}`}
-                    >
-                        All Orders
-                    </button>
-                    <button
-                        onClick={() => setFilter('active')}
-                        className={`btn ${filter === 'active' ? 'btn-primary' : 'btn-ghost'}`}
-                    >
-                        Active
-                    </button>
-                    <button
-                        onClick={() => setFilter('completed')}
-                        className={`btn ${filter === 'completed' ? 'btn-primary' : 'btn-ghost'}`}
-                    >
-                        Completed
-                    </button>
-                </div>
-
-                {/* Orders List */}
-                {filteredOrders.length === 0 ? (
-                    <div className="card text-center py-16">
-                        <div className="text-6xl mb-4">📦</div>
-                        <h3 className="text-2xl font-bold text-gray-900 mb-2">No orders found</h3>
-                        <p className="text-gray-600 mb-6">Start ordering delicious food!</p>
-                        <button onClick={() => navigate('/restaurants')} className="btn btn-primary">
-                            Browse Restaurants
-                        </button>
-                    </div>
-                ) : (
-                    <div className="space-y-6">
-                        {filteredOrders.map((order, index) => (
-                            <div
-                                key={order._id}
-                                className="card animate-slide-up"
-                                style={{ animationDelay: `${index * 0.05}s` }}
-                            >
-                                {/* Order Header */}
-                                <div className="flex justify-between items-start mb-4 pb-4 border-b border-gray-200">
-                                    <div>
-                                        <h3 className="text-lg font-heading font-bold text-gray-900 mb-1">
-                                            {order.restaurantId?.name || 'Restaurant'}
-                                        </h3>
-                                        <p className="text-sm text-gray-600">
-                                            Order #{order._id.slice(-6)} • {new Date(order.createdAt).toLocaleDateString()}
-                                        </p>
-                                    </div>
-                                    <span className={`badge ${getStatusColor(order.status)}`}>
-                                        {order.status.replace('_', ' ').toUpperCase()}
-                                    </span>
-                                </div>
-
-                                {/* Order Timeline - Only for active orders */}
-                                {!['delivered', 'cancelled'].includes(order.status) && (
-                                    <div className="mb-6 bg-gray-50 rounded-lg p-4">
-                                        <OrderTimeline currentStatus={order.status} />
-                                    </div>
-                                )}
-
-                                {/* Order Items */}
-                                <div className="mb-4">
-                                    <h4 className="font-semibold text-gray-900 mb-3">Items:</h4>
-                                    <div className="space-y-2">
-                                        {order.items.map((item, idx) => (
-                                            <div key={idx} className="flex justify-between text-sm">
-                                                <span className="text-gray-700">
-                                                    {item.name} <span className="text-gray-500">x{item.quantity}</span>
-                                                </span>
-                                                <span className="font-semibold text-gray-900">
-                                                    ${(item.price * item.quantity).toFixed(2)}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Delivery Address */}
-                                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                                    <p className="text-sm font-semibold text-gray-700 mb-1">Delivery Address:</p>
-                                    <p className="text-sm text-gray-600">
-                                        {order.deliveryAddress.street}, {order.deliveryAddress.city}
+            ) : (
+                <div className="space-y-6">
+                    {orders.map((order) => (
+                        <div key={order._id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                            <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-4">
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-900">
+                                        Order #{order._id.slice(-6).toUpperCase()}
+                                    </h3>
+                                    <p className="text-sm text-gray-500">
+                                        {new Date(order.createdAt).toLocaleDateString()} at {new Date(order.createdAt).toLocaleTimeString()}
                                     </p>
                                 </div>
-
-                                {/* Order Footer */}
-                                <div className="flex justify-between items-center pt-4 border-t border-gray-200">
-                                    <div>
-                                        <span className="text-sm text-gray-600">Total: </span>
-                                        <span className="text-xl font-bold text-primary-500">
-                                            ${order.totalAmount.toFixed(2)}
-                                        </span>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        {order.status === 'delivered' && (
-                                            <>
-                                                <button
-                                                    onClick={() => handleReorder(order)}
-                                                    className="btn btn-outline text-sm py-2"
-                                                >
-                                                    Reorder
-                                                </button>
-                                                <button className="btn btn-primary text-sm py-2">
-                                                    ⭐ Rate Order
-                                                </button>
-                                            </>
-                                        )}
-                                        {!['delivered', 'cancelled'].includes(order.status) && (
-                                            <button className="btn btn-primary text-sm py-2">
-                                                Track Order
-                                            </button>
-                                        )}
-                                    </div>
+                                <div className="flex items-center gap-3">
+                                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide
+                                        ${order.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                                            order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                                'bg-blue-100 text-blue-700'}`}>
+                                        {order.status}
+                                    </span>
+                                    <Link to={`/track-order/${order._id}`} className="text-primary-600 font-bold hover:text-primary-700 text-sm">
+                                        Track Order &rarr;
+                                    </Link>
                                 </div>
                             </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+
+                            <div className="border-t border-gray-100 pt-4">
+                                <div className="flex justify-between items-center">
+                                    <p className="text-gray-600">
+                                        {order.items?.length || 0} items from <span className="font-bold text-gray-900">{order.restaurant?.name || 'Restaurant'}</span>
+                                    </p>
+                                    <p className="text-lg font-black text-gray-900">
+                                        ${order.totalAmount?.toFixed(2)}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 };

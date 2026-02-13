@@ -12,48 +12,28 @@ const RestaurantDashboard = () => {
     const [orders, setOrders] = useState([]);
     const [foodItems, setFoodItems] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('orders');
+    const [activeTab, setActiveTab] = useState('orders'); // 'orders' or 'menu'
+
+    // Menu Item State
     const [showAddItemModal, setShowAddItemModal] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [newItem, setNewItem] = useState({
-        name: '',
-        description: '',
-        price: '',
-        category: '',
-        imageUrl: '',
-        isAvailable: true,
-        isVegetarian: false,
-        isVegan: false
+        name: '', description: '', price: '', category: '', imageUrl: '', isAvailable: true, isVegetarian: false, isVegan: false
     });
 
     useEffect(() => {
         if (authLoading) return;
-
         if (!user || user.role !== 'restaurant') {
             navigate('/');
             return;
         }
         fetchRestaurantData();
-
-        // Poll for new orders every 10 seconds
         const interval = setInterval(fetchOrders, 10000);
         return () => clearInterval(interval);
     }, [user, navigate, authLoading]);
 
-    if (authLoading) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin text-6xl mb-4">⚙️</div>
-                    <p className="text-gray-600 font-bold">Verifying Authentication...</p>
-                </div>
-            </div>
-        );
-    }
-
     const fetchRestaurantData = async () => {
         try {
-            // Get restaurant owned by this user
             const restaurantsRes = await api.get('/api/restaurants');
             const myRestaurant = restaurantsRes.data.find(r => r.ownerId === user._id);
 
@@ -63,14 +43,11 @@ const RestaurantDashboard = () => {
             }
 
             setRestaurant(myRestaurant);
-
-            // Fetch orders and food items for this restaurant
             const [ordersRes, foodItemsRes] = await Promise.all([
                 api.get(`/api/orders/restaurant/${myRestaurant._id}`),
                 api.get(`/api/fooditems?restaurantId=${myRestaurant._id}`)
             ]);
 
-            // Orders are already filtered by backend
             setOrders(ordersRes.data);
             setFoodItems(foodItemsRes.data);
         } catch (error) {
@@ -93,11 +70,8 @@ const RestaurantDashboard = () => {
 
     const updateOrderStatus = async (orderId, newStatus) => {
         try {
-            await api.put(
-                `/api/orders/${orderId}/status`,
-                { status: newStatus }
-            );
-            addToast(`Order status updated to ${newStatus}`, 'success');
+            await api.put(`/api/orders/${orderId}/status`, { status: newStatus });
+            addToast(`Order moved to ${newStatus.replace('_', ' ').toUpperCase()}`, 'success');
             fetchOrders();
         } catch (error) {
             console.error('Error updating order status:', error);
@@ -108,10 +82,7 @@ const RestaurantDashboard = () => {
     const handleAddItem = async (e) => {
         e.preventDefault();
         try {
-            await api.post(
-                '/api/fooditems',
-                { ...newItem, restaurantId: restaurant._id, price: parseFloat(newItem.price) }
-            );
+            await api.post('/api/fooditems', { ...newItem, restaurantId: restaurant._id, price: parseFloat(newItem.price) });
             addToast('Menu item added successfully!', 'success');
             setShowAddItemModal(false);
             setNewItem({ name: '', description: '', price: '', category: '', imageUrl: '', isAvailable: true, isVegetarian: false, isVegan: false });
@@ -125,10 +96,7 @@ const RestaurantDashboard = () => {
     const handleUpdateItem = async (e) => {
         e.preventDefault();
         try {
-            await api.put(
-                `/api/fooditems/${editingItem._id}`,
-                { ...editingItem, price: parseFloat(editingItem.price) }
-            );
+            await api.put(`/api/fooditems/${editingItem._id}`, { ...editingItem, price: parseFloat(editingItem.price) });
             addToast('Menu item updated successfully!', 'success');
             setEditingItem(null);
             fetchRestaurantData();
@@ -140,7 +108,6 @@ const RestaurantDashboard = () => {
 
     const handleDeleteItem = async (itemId) => {
         if (!window.confirm('Are you sure you want to delete this item?')) return;
-
         try {
             await api.delete(`/api/fooditems/${itemId}`);
             addToast('Menu item deleted successfully!', 'success');
@@ -151,495 +118,322 @@ const RestaurantDashboard = () => {
         }
     };
 
-    if (loading) {
+    const toggleItemAvailability = async (item) => {
+        try {
+            await api.put(`/api/fooditems/${item._id}`, { ...item, isAvailable: !item.isAvailable });
+            addToast(`Item is now ${!item.isAvailable ? 'Available' : 'Unavailable'}`, 'success');
+            fetchRestaurantData();
+        } catch (error) {
+            addToast('Failed to toggle availability', 'error');
+        }
+    };
+
+    if (loading || authLoading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-100 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin text-6xl mb-4">🍽️</div>
-                    <p className="text-gray-600">Loading restaurant dashboard...</p>
-                </div>
+            <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 space-y-4">
+                <div className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin"></div>
+                <p className="text-gray-500 font-medium animate-pulse">Loading Kitchen...</p>
             </div>
         );
     }
 
-    if (!restaurant) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-100 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="text-6xl mb-4">😕</div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">No Restaurant Found</h2>
-                    <p className="text-gray-600">Please contact admin to set up your restaurant.</p>
-                </div>
-            </div>
-        );
-    }
+    if (!restaurant) return <div className="p-8 text-center text-gray-500">No Restaurant Found. Contact Support.</div>;
 
-    const pendingOrders = orders.filter(o => o.status === 'pending');
-    const confirmedOrders = orders.filter(o => o.status === 'confirmed');
-    const preparingOrders = orders.filter(o => o.status === 'preparing');
-    const readyOrders = orders.filter(o => o.status === 'ready_for_pickup');
-    const outForDelivery = orders.filter(o => o.status === 'out_for_delivery');
-    const completedToday = orders.filter(o =>
-        o.status === 'delivered' &&
-        new Date(o.createdAt).toDateString() === new Date().toDateString()
-    );
-    const todayRevenue = completedToday.reduce((sum, o) => sum + o.totalAmount, 0);
+    // Analytics Calculation
+    const todayOrders = orders.filter(o => new Date(o.createdAt).toDateString() === new Date().toDateString());
+    const revenue = todayOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    const pendingCount = orders.filter(o => o.status === 'pending').length;
+
+    // Group Orders for Kanban
+    const kanbanColumns = {
+        new: orders.filter(o => o.status === 'pending'),
+        preparing: orders.filter(o => o.status === 'confirmed' || o.status === 'preparing'),
+        ready: orders.filter(o => o.status === 'ready_for_pickup'),
+        out: orders.filter(o => o.status === 'out_for_delivery')
+    };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-100">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-4xl font-heading font-bold text-gray-900 mb-2">
-                        <span className="text-gradient bg-gradient-to-r from-orange-600 to-red-600">
-                            {restaurant.name}
-                        </span>
-                    </h1>
-                    <p className="text-gray-600">Restaurant Management Dashboard</p>
-                </div>
-
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div className="card bg-gradient-to-br from-yellow-400 to-orange-500 text-white">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-yellow-100 text-sm mb-1">Pending Orders</p>
-                                <p className="text-3xl font-bold">{pendingOrders.length}</p>
-                            </div>
-                            <div className="text-5xl opacity-20">🔔</div>
-                        </div>
-                    </div>
-
-                    <div className="card bg-gradient-to-br from-orange-500 to-red-600 text-white">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-orange-100 text-sm mb-1">Preparing</p>
-                                <p className="text-3xl font-bold">{preparingOrders.length}</p>
-                            </div>
-                            <div className="text-5xl opacity-20">👨‍🍳</div>
-                        </div>
-                    </div>
-
-                    <div className="card bg-gradient-to-br from-green-500 to-teal-600 text-white">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-green-100 text-sm mb-1">Ready for Pickup</p>
-                                <p className="text-3xl font-bold">{readyOrders.length}</p>
-                            </div>
-                            <div className="text-5xl opacity-20">✅</div>
-                        </div>
-                    </div>
-
-                    <div className="card bg-gradient-to-br from-purple-500 to-pink-600 text-white">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-purple-100 text-sm mb-1">Today's Revenue</p>
-                                <p className="text-3xl font-bold">${todayRevenue.toFixed(0)}</p>
-                            </div>
-                            <div className="text-5xl opacity-20">💰</div>
-                        </div>
+        <div className="min-h-screen bg-gray-50 font-sans pb-20">
+            {/* --- HEADER --- */}
+            <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-30 shadow-sm">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center text-xl">👨‍🍳</div>
+                    <div>
+                        <h1 className="text-lg font-black text-gray-900 leading-tight">{restaurant.name}</h1>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Command Center</p>
                     </div>
                 </div>
+                <div className="flex bg-gray-100 p-1 rounded-lg">
+                    <button
+                        onClick={() => setActiveTab('orders')}
+                        className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${activeTab === 'orders' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        Orders Board
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('menu')}
+                        className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${activeTab === 'menu' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        Menu Manager
+                    </button>
+                </div>
+            </div>
 
-                {/* Tabs */}
-                <div className="mb-6">
-                    <div className="flex gap-2 border-b border-gray-200">
-                        {['orders', 'menu'].map((tab) => (
-                            <button
-                                key={tab}
-                                onClick={() => setActiveTab(tab)}
-                                className={`px-6 py-3 font-semibold capitalize transition-colors ${activeTab === tab
-                                    ? 'text-orange-600 border-b-2 border-orange-600'
-                                    : 'text-gray-600 hover:text-gray-900'
-                                    }`}
-                            >
-                                {tab}
-                            </button>
-                        ))}
+            {/* --- ANALYTICS BAR --- */}
+            <div className="grid grid-cols-4 gap-6 px-8 py-6 max-w-7xl mx-auto">
+                <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-green-50 text-green-600 flex items-center justify-center text-2xl">💰</div>
+                    <div>
+                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Today's Revenue</p>
+                        <p className="text-2xl font-black text-gray-900">${revenue.toFixed(2)}</p>
                     </div>
                 </div>
+                <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-2xl">📦</div>
+                    <div>
+                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Total Orders</p>
+                        <p className="text-2xl font-black text-gray-900">{todayOrders.length}</p>
+                    </div>
+                </div>
+                <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center text-2xl">🔔</div>
+                    <div>
+                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Pending Action</p>
+                        <p className="text-2xl font-black text-gray-900">{pendingCount}</p>
+                    </div>
+                </div>
+                <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center text-2xl">⭐</div>
+                    <div>
+                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Rating</p>
+                        <p className="text-2xl font-black text-gray-900">{restaurant.rating}</p>
+                    </div>
+                </div>
+            </div>
 
-                {/* Orders Tab */}
+            {/* --- MAIN CONTENT --- */}
+            <div className="px-8 pb-12 max-w-7xl mx-auto">
+
+                {/* 1. KANBAN BOARD VIEW */}
                 {activeTab === 'orders' && (
-                    <div className="space-y-6">
-                        {/* Pending Orders */}
-                        {pendingOrders.length > 0 && (
-                            <div className="card">
-                                <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                                    <span className="text-2xl">🔔</span>
-                                    New Orders ({pendingOrders.length})
-                                </h2>
-                                <div className="space-y-4">
-                                    {pendingOrders.map((order) => (
-                                        <div key={order._id} className="border border-orange-200 rounded-lg p-4 bg-orange-50">
-                                            <div className="flex items-start justify-between mb-3">
-                                                <div>
-                                                    <p className="font-bold text-gray-900">Order #{order._id.slice(-8)}</p>
-                                                    <p className="text-sm text-gray-600">
-                                                        {order.userId?.name || order.guestInfo?.name || 'Guest'} •
-                                                        {new Date(order.createdAt).toLocaleTimeString()}
-                                                    </p>
-                                                </div>
-                                                <p className="text-xl font-bold text-orange-600">${order.totalAmount.toFixed(2)}</p>
-                                            </div>
-                                            <div className="mb-3">
-                                                {order.items.map((item, idx) => (
-                                                    <p key={idx} className="text-sm text-gray-700">
-                                                        {item.quantity}x {item.name}
-                                                    </p>
-                                                ))}
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => updateOrderStatus(order._id, 'confirmed')}
-                                                    className="btn btn-primary flex-1"
-                                                >
-                                                    Accept Order
-                                                </button>
-                                                <button
-                                                    onClick={() => updateOrderStatus(order._id, 'cancelled')}
-                                                    className="btn bg-red-500 text-white hover:bg-red-600 flex-1"
-                                                >
-                                                    Decline
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
+                    <div className="grid grid-cols-4 gap-6 h-[calc(100vh-250px)]">
+                        {/* Column: New */}
+                        <div className="bg-gray-100/50 rounded-3xl p-4 flex flex-col">
+                            <div className="flex items-center justify-between mb-4 px-2">
+                                <h3 className="font-bold text-gray-700">New Orders</h3>
+                                <span className="bg-orange-100 text-orange-700 text-xs font-bold px-2 py-1 rounded-full">{kanbanColumns.new.length}</span>
                             </div>
-                        )}
+                            <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar">
+                                {kanbanColumns.new.map(order => (
+                                    <div key={order._id} className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-orange-500 animate-in fade-in slide-in-from-bottom-2">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <span className="font-mono text-xs text-gray-400">#{order._id.slice(-4)}</span>
+                                            <span className="text-xs font-bold text-orange-600">{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                        </div>
+                                        <div className="space-y-1 mb-3">
+                                            {order.items.map((item, i) => (
+                                                <div key={i} className="text-sm font-medium text-gray-800 flex justify-between">
+                                                    <span>{item.quantity}x {item.name}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <p className="text-right font-black text-gray-900 mb-3 text-lg">${order.totalAmount.toFixed(2)}</p>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <button onClick={() => updateOrderStatus(order._id, 'confirmed')} className="bg-gray-900 text-white py-2 rounded-lg text-xs font-bold hover:bg-gray-800">Accept</button>
+                                            <button onClick={() => updateOrderStatus(order._id, 'cancelled')} className="dg-white border border-gray-200 text-red-500 py-2 rounded-lg text-xs font-bold hover:bg-red-50">Decline</button>
+                                        </div>
+                                    </div>
+                                ))}
+                                {kanbanColumns.new.length === 0 && <div className="text-center py-10 text-gray-400 text-sm font-medium border-2 border-dashed border-gray-200 rounded-xl">No new orders</div>}
+                            </div>
+                        </div>
 
-                        {/* Confirmed Orders */}
-                        {confirmedOrders.length > 0 && (
-                            <div className="card">
-                                <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                                    <span className="text-2xl">✅</span>
-                                    Accepted Orders ({confirmedOrders.length})
-                                </h2>
-                                <div className="grid md:grid-cols-2 gap-4">
-                                    {confirmedOrders.map((order) => (
-                                        <div key={order._id} className="border border-blue-200 rounded-lg p-4 bg-blue-50">
-                                            <div className="flex items-start justify-between mb-3">
-                                                <div>
-                                                    <p className="font-bold text-gray-900">Order #{order._id.slice(-8)}</p>
-                                                    <p className="text-sm text-gray-600">
-                                                        Accept time: {new Date(order.updatedAt).toLocaleTimeString()}
-                                                    </p>
-                                                </div>
-                                                <span className="badge bg-blue-100 text-blue-700">Confirmed</span>
-                                            </div>
-                                            <button
-                                                onClick={() => updateOrderStatus(order._id, 'preparing')}
-                                                className="btn btn-primary w-full"
-                                            >
-                                                Start Preparing
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
+                        {/* Column: Preparing */}
+                        <div className="bg-gray-100/50 rounded-3xl p-4 flex flex-col">
+                            <div className="flex items-center justify-between mb-4 px-2">
+                                <h3 className="font-bold text-gray-700">Kitchen</h3>
+                                <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-full">{kanbanColumns.preparing.length}</span>
                             </div>
-                        )}
+                            <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar">
+                                {kanbanColumns.preparing.map(order => (
+                                    <div key={order._id} className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <span className="font-mono text-xs text-gray-400">#{order._id.slice(-4)}</span>
+                                            <span className="text-xs font-bold text-blue-600">{order.status === 'confirmed' ? 'Queued' : 'Cooking'}</span>
+                                        </div>
+                                        <div className="space-y-1 mb-3 opacity-80">
+                                            {order.items.map((item, i) => (
+                                                <div key={i} className="text-sm text-gray-800 flex justify-between">
+                                                    <span>{item.quantity}x {item.name}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <button onClick={() => updateOrderStatus(order._id, 'ready_for_pickup')} className="w-full bg-blue-600 text-white py-2 rounded-lg text-xs font-bold hover:bg-blue-700 mt-2">
+                                            Mark Ready 🔔
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
 
-                        {/* Preparing Orders */}
-                        {preparingOrders.length > 0 && (
-                            <div className="card">
-                                <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                                    <span className="text-2xl">👨‍🍳</span>
-                                    In Kitchen ({preparingOrders.length})
-                                </h2>
-                                <div className="grid md:grid-cols-2 gap-4">
-                                    {preparingOrders.map((order) => (
-                                        <div key={order._id} className="border border-yellow-200 rounded-lg p-4 bg-yellow-50">
-                                            <div className="flex items-start justify-between mb-3">
-                                                <div>
-                                                    <p className="font-bold text-gray-900">Order #{order._id.slice(-8)}</p>
-                                                    <p className="text-sm text-gray-600">
-                                                        Cooking... {new Date(order.updatedAt).toLocaleTimeString()}
-                                                    </p>
-                                                </div>
-                                                <span className="badge bg-yellow-100 text-yellow-700">Preparing</span>
-                                            </div>
-                                            <button
-                                                onClick={() => updateOrderStatus(order._id, 'ready_for_pickup')}
-                                                className="btn bg-green-600 text-white hover:bg-green-700 w-full"
-                                            >
-                                                Ready for Pickup
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
+                        {/* Column: Ready */}
+                        <div className="bg-gray-100/50 rounded-3xl p-4 flex flex-col">
+                            <div className="flex items-center justify-between mb-4 px-2">
+                                <h3 className="font-bold text-gray-700">Ready</h3>
+                                <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded-full">{kanbanColumns.ready.length}</span>
                             </div>
-                        )}
+                            <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar">
+                                {kanbanColumns.ready.map(order => (
+                                    <div key={order._id} className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500 opacity-80 hover:opacity-100 transition-opacity">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <span className="font-mono text-xs text-gray-400">#{order._id.slice(-4)}</span>
+                                            <span className="text-xs font-bold text-green-600">Waiting Pickup</span>
+                                        </div>
+                                        <p className="text-sm font-medium text-gray-800 mb-2">{order.items.length} Items</p>
+                                        <div className="p-2 bg-green-50 text-green-700 text-xs font-bold rounded-lg text-center">
+                                            Rider Notified
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
 
-                        {/* Ready for Pickup */}
-                        {(readyOrders.length > 0 || outForDelivery.length > 0) && (
-                            <div className="card">
-                                <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                                    <span className="text-2xl">📦</span>
-                                    Out for Delivery / Ready ({readyOrders.length + outForDelivery.length})
-                                </h2>
-                                <div className="grid md:grid-cols-2 gap-4">
-                                    {readyOrders.map((order) => (
-                                        <div key={order._id} className="border border-green-200 rounded-lg p-4 bg-green-50">
-                                            <div className="flex items-start justify-between mb-2">
-                                                <div>
-                                                    <p className="font-bold text-gray-900">Order #{order._id.slice(-8)}</p>
-                                                    <p className="text-sm text-gray-600">Waiting for rider pickup</p>
-                                                </div>
-                                                <span className="badge bg-green-100 text-green-700">Ready</span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {outForDelivery.map((order) => (
-                                        <div key={order._id} className="border border-purple-200 rounded-lg p-4 bg-purple-50">
-                                            <div className="flex items-start justify-between mb-2">
-                                                <div>
-                                                    <p className="font-bold text-gray-900">Order #{order._id.slice(-8)}</p>
-                                                    <p className="text-sm text-gray-600">With rider: {order.riderId?.userId?.name || 'Assigned'}</p>
-                                                </div>
-                                                <span className="badge bg-purple-100 text-purple-700">On Way</span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
+                        {/* Column: Out */}
+                        <div className="bg-gray-100/50 rounded-3xl p-4 flex flex-col">
+                            <div className="flex items-center justify-between mb-4 px-2">
+                                <h3 className="font-bold text-gray-700">Out for Delivery</h3>
+                                <span className="bg-purple-100 text-purple-700 text-xs font-bold px-2 py-1 rounded-full">{kanbanColumns.out.length}</span>
                             </div>
-                        )}
-
-                        {orders.length === 0 && (
-                            <div className="card text-center py-12">
-                                <div className="text-6xl mb-4">📦</div>
-                                <p className="text-gray-600">No orders yet</p>
+                            <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar">
+                                {kanbanColumns.out.map(order => (
+                                    <div key={order._id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <span className="font-mono text-xs text-gray-400">#{order._id.slice(-4)}</span>
+                                            <span className="text-xs font-bold text-purple-600">On Way</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center text-xs">🛵</div>
+                                            <span className="text-sm font-medium text-gray-700">{order.riderId?.userId?.name || 'Rider'}</span>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                        )}
+                        </div>
                     </div>
                 )}
 
-                {/* Menu Tab */}
+                {/* 2. MENU MANAGER VIEW */}
                 {activeTab === 'menu' && (
-                    <div className="card">
-                        <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-xl font-bold text-gray-900">Menu Management</h2>
-                            <button
-                                onClick={() => setShowAddItemModal(true)}
-                                className="btn btn-primary"
-                            >
-                                + Add New Item
+                    <div className="animate-in fade-in zoom-in-95 duration-300">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-black text-gray-900">Menu items</h2>
+                            <button onClick={() => setShowAddItemModal(true)} className="bg-gray-900 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-gray-800 transition-all flex items-center gap-2">
+                                <span className="text-xl">+</span> Add New Item
                             </button>
                         </div>
 
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {foodItems.map((item) => (
-                                <div key={item._id} className="border border-gray-200 rounded-lg p-4">
-                                    <img
-                                        src={item.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400'}
-                                        alt={item.name}
-                                        className="w-full h-32 object-cover rounded-lg mb-3"
-                                    />
-                                    <h3 className="font-bold text-gray-900 mb-1">{item.name}</h3>
-                                    <p className="text-sm text-gray-600 mb-2 line-clamp-2">{item.description}</p>
-                                    <div className="flex items-center justify-between mb-3">
-                                        <span className="text-lg font-bold text-orange-600">${item.price.toFixed(2)}</span>
-                                        <span className={`badge ${item.isAvailable ? 'badge-success' : 'badge-error'}`}>
-                                            {item.isAvailable ? 'Available' : 'Unavailable'}
-                                        </span>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {foodItems.map(item => (
+                                <div key={item._id} className={`bg-white rounded-3xl p-4 border transition-all ${!item.isAvailable ? 'border-gray-200 opacity-70 grayscale' : 'border-gray-100 hover:shadow-xl hover:-translate-y-1'}`}>
+                                    <div className="relative h-48 mb-4 rounded-2xl overflow-hidden group">
+                                        <img src={item.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500'} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={item.name} />
+                                        <button onClick={() => setEditingItem(item)} className="absolute top-3 right-3 bg-white/90 p-2 rounded-lg shadow-sm hover:bg-white text-gray-700 font-bold text-xs backdrop-blur-sm">Only Edit</button>
                                     </div>
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h3 className="font-bold text-gray-900 text-lg leading-tight">{item.name}</h3>
+                                        <span className="font-black text-green-600">${item.price}</span>
+                                    </div>
+                                    <p className="text-sm text-gray-500 line-clamp-2 mb-4 h-10">{item.description}</p>
+
                                     <div className="flex gap-2">
                                         <button
-                                            onClick={() => setEditingItem(item)}
-                                            className="btn btn-sm bg-blue-500 text-white hover:bg-blue-600 flex-1"
+                                            onClick={() => toggleItemAvailability(item)}
+                                            className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-colors ${item.isAvailable ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'}`}
                                         >
-                                            Edit
+                                            {item.isAvailable ? 'Mark Unavailable' : 'Mark Available'}
                                         </button>
                                         <button
                                             onClick={() => handleDeleteItem(item._id)}
-                                            className="btn btn-sm bg-red-500 text-white hover:bg-red-600 flex-1"
+                                            className="w-10 flex items-center justify-center bg-gray-50 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50"
                                         >
-                                            Delete
+                                            🗑️
                                         </button>
                                     </div>
                                 </div>
                             ))}
                         </div>
-
-                        {foodItems.length === 0 && (
-                            <div className="text-center py-12">
-                                <div className="text-6xl mb-4">🍽️</div>
-                                <p className="text-gray-600">No menu items yet. Add your first item!</p>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Add Item Modal */}
-                {showAddItemModal && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                        <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-                            <h2 className="text-2xl font-bold text-gray-900 mb-4">Add Menu Item</h2>
-                            <form onSubmit={handleAddItem} className="space-y-4">
-                                <input
-                                    type="text"
-                                    placeholder="Item Name"
-                                    required
-                                    value={newItem.name}
-                                    onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-                                    className="input-field"
-                                />
-                                <textarea
-                                    placeholder="Description"
-                                    required
-                                    value={newItem.description}
-                                    onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
-                                    className="input-field"
-                                    rows="3"
-                                />
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    placeholder="Price"
-                                    required
-                                    value={newItem.price}
-                                    onChange={(e) => setNewItem({ ...newItem, price: e.target.value })}
-                                    className="input-field"
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="Category (e.g., Pizza, Burger)"
-                                    required
-                                    value={newItem.category}
-                                    onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
-                                    className="input-field"
-                                />
-                                <input
-                                    type="url"
-                                    placeholder="Image URL"
-                                    value={newItem.imageUrl}
-                                    onChange={(e) => setNewItem({ ...newItem, imageUrl: e.target.value })}
-                                    className="input-field"
-                                />
-                                <div className="flex gap-4">
-                                    <label className="flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
-                                            checked={newItem.isVegetarian}
-                                            onChange={(e) => setNewItem({ ...newItem, isVegetarian: e.target.checked })}
-                                        />
-                                        <span className="text-sm">Vegetarian</span>
-                                    </label>
-                                    <label className="flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
-                                            checked={newItem.isVegan}
-                                            onChange={(e) => setNewItem({ ...newItem, isVegan: e.target.checked })}
-                                        />
-                                        <span className="text-sm">Vegan</span>
-                                    </label>
-                                </div>
-                                <div className="flex gap-2">
-                                    <button type="submit" className="btn btn-primary flex-1">
-                                        Add Item
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowAddItemModal(false)}
-                                        className="btn bg-gray-500 text-white hover:bg-gray-600 flex-1"
-                                    >
-                                        Cancel
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                )}
-
-                {/* Edit Item Modal */}
-                {editingItem && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                        <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-                            <h2 className="text-2xl font-bold text-gray-900 mb-4">Edit Menu Item</h2>
-                            <form onSubmit={handleUpdateItem} className="space-y-4">
-                                <input
-                                    type="text"
-                                    placeholder="Item Name"
-                                    required
-                                    value={editingItem.name}
-                                    onChange={(e) => setEditingItem({ ...editingItem, name: e.target.value })}
-                                    className="input-field"
-                                />
-                                <textarea
-                                    placeholder="Description"
-                                    required
-                                    value={editingItem.description}
-                                    onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value })}
-                                    className="input-field"
-                                    rows="3"
-                                />
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    placeholder="Price"
-                                    required
-                                    value={editingItem.price}
-                                    onChange={(e) => setEditingItem({ ...editingItem, price: e.target.value })}
-                                    className="input-field"
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="Category"
-                                    required
-                                    value={editingItem.category}
-                                    onChange={(e) => setEditingItem({ ...editingItem, category: e.target.value })}
-                                    className="input-field"
-                                />
-                                <input
-                                    type="url"
-                                    placeholder="Image URL"
-                                    value={editingItem.imageUrl}
-                                    onChange={(e) => setEditingItem({ ...editingItem, imageUrl: e.target.value })}
-                                    className="input-field"
-                                />
-                                <div className="flex gap-4">
-                                    <label className="flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
-                                            checked={editingItem.isAvailable}
-                                            onChange={(e) => setEditingItem({ ...editingItem, isAvailable: e.target.checked })}
-                                        />
-                                        <span className="text-sm">Available</span>
-                                    </label>
-                                    <label className="flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
-                                            checked={editingItem.isVegetarian}
-                                            onChange={(e) => setEditingItem({ ...editingItem, isVegetarian: e.target.checked })}
-                                        />
-                                        <span className="text-sm">Vegetarian</span>
-                                    </label>
-                                    <label className="flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
-                                            checked={editingItem.isVegan}
-                                            onChange={(e) => setEditingItem({ ...editingItem, isVegan: e.target.checked })}
-                                        />
-                                        <span className="text-sm">Vegan</span>
-                                    </label>
-                                </div>
-                                <div className="flex gap-2">
-                                    <button type="submit" className="btn btn-primary flex-1">
-                                        Update Item
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setEditingItem(null)}
-                                        className="btn bg-gray-500 text-white hover:bg-gray-600 flex-1"
-                                    >
-                                        Cancel
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
                     </div>
                 )}
             </div>
+
+            {/* --- MODALS --- */}
+            {(showAddItemModal || editingItem) && (
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl">
+                        <h2 className="text-2xl font-black text-gray-900 mb-6">{editingItem ? 'Edit Item' : 'New Dish'}</h2>
+                        <form onSubmit={editingItem ? handleUpdateItem : handleAddItem} className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase">Name</label>
+                                    <input className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
+                                        value={editingItem ? editingItem.name : newItem.name}
+                                        onChange={e => (editingItem ? setEditingItem({ ...editingItem, name: e.target.value }) : setNewItem({ ...newItem, name: e.target.value }))}
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase">Price</label>
+                                    <input className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
+                                        type="number" step="0.01"
+                                        value={editingItem ? editingItem.price : newItem.price}
+                                        onChange={e => (editingItem ? setEditingItem({ ...editingItem, price: e.target.value }) : setNewItem({ ...newItem, price: e.target.value }))}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-gray-500 uppercase">Description</label>
+                                <textarea className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
+                                    rows="3"
+                                    value={editingItem ? editingItem.description : newItem.description}
+                                    onChange={e => (editingItem ? setEditingItem({ ...editingItem, description: e.target.value }) : setNewItem({ ...newItem, description: e.target.value }))}
+                                />
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-gray-500 uppercase">Image URL</label>
+                                <input className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
+                                    value={editingItem ? editingItem.imageUrl : newItem.imageUrl}
+                                    onChange={e => (editingItem ? setEditingItem({ ...editingItem, imageUrl: e.target.value }) : setNewItem({ ...newItem, imageUrl: e.target.value }))}
+                                />
+                            </div>
+
+                            <div className="flex gap-4 py-2">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" className="w-5 h-5 rounded text-green-600 focus:ring-green-500"
+                                        checked={editingItem ? editingItem.isVegetarian : newItem.isVegetarian}
+                                        onChange={e => (editingItem ? setEditingItem({ ...editingItem, isVegetarian: e.target.checked }) : setNewItem({ ...newItem, isVegetarian: e.target.checked }))}
+                                    />
+                                    <span className="font-bold text-gray-700 text-sm">Vegetarian</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" className="w-5 h-5 rounded text-green-600 focus:ring-green-500"
+                                        checked={editingItem ? editingItem.isVegan : newItem.isVegan}
+                                        onChange={e => (editingItem ? setEditingItem({ ...editingItem, isVegan: e.target.checked }) : setNewItem({ ...newItem, isVegan: e.target.checked }))}
+                                    />
+                                    <span className="font-bold text-gray-700 text-sm">Vegan</span>
+                                </label>
+                            </div>
+
+                            <div className="flex gap-3 pt-4 border-t border-gray-100">
+                                <button type="button" onClick={() => { setShowAddItemModal(false); setEditingItem(null) }} className="flex-1 py-3 rounded-xl font-bold text-gray-500 hover:bg-gray-100 transition-colors">Cancel</button>
+                                <button type="submit" className="flex-1 bg-gray-900 text-white py-3 rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-lg">Save Item</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

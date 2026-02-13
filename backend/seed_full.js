@@ -2,8 +2,8 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
-// FORCE the local DB logic to match index.js
-const uri = 'mongodb://localhost:27017/befoody_forced_local_v3';
+// Use ENV URI if provided, otherwise fallback
+const uri = process.env.MONGO_URI || 'mongodb://localhost:27017/befoody_forced_local_v3';
 
 const seed = async () => {
     try {

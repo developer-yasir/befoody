@@ -4,15 +4,18 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 import api from '../utils/api';
 
+import RestaurantBottomNav from '../components/restaurant/RestaurantBottomNav';
+
 const RestaurantDashboard = () => {
-    const { user, loading: authLoading } = useAuth();
+    const { user, logout, loading: authLoading } = useAuth();
     const navigate = useNavigate();
     const { addToast } = useToast();
     const [restaurant, setRestaurant] = useState(null);
     const [orders, setOrders] = useState([]);
     const [foodItems, setFoodItems] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('orders'); // 'orders' or 'menu'
+    const [activeTab, setActiveTab] = useState('orders'); // 'orders', 'menu', or 'stats' (stats mobile only)
+    const [mobileActiveColumn, setMobileActiveColumn] = useState('new'); // 'new', 'preparing', 'ready', 'out'
 
     // Menu Item State
     const [showAddItemModal, setShowAddItemModal] = useState(false);
@@ -155,15 +158,17 @@ const RestaurantDashboard = () => {
     return (
         <div className="min-h-screen bg-gray-50 font-sans pb-20">
             {/* --- HEADER --- */}
-            <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-30 shadow-sm">
+            <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-4 flex justify-between items-center sticky top-0 z-30 shadow-sm">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center text-xl">👨‍🍳</div>
                     <div>
-                        <h1 className="text-lg font-black text-gray-900 leading-tight">{restaurant.name}</h1>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Command Center</p>
+                        <h1 className="text-base md:text-lg font-black text-gray-900 leading-tight">{restaurant.name}</h1>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Kitchen Hub</p>
                     </div>
                 </div>
-                <div className="flex bg-gray-100 p-1 rounded-lg">
+
+                {/* Desktop Tabs */}
+                <div className="hidden md:flex bg-gray-100 p-1 rounded-lg">
                     <button
                         onClick={() => setActiveTab('orders')}
                         className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${activeTab === 'orders' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
@@ -177,146 +182,175 @@ const RestaurantDashboard = () => {
                         Menu Manager
                     </button>
                 </div>
+
+                {/* Mobile Logout */}
+                <button onClick={logout} className="md:hidden w-10 h-10 flex items-center justify-center bg-gray-50 rounded-xl text-gray-400">
+                    🚪
+                </button>
             </div>
 
             {/* --- ANALYTICS BAR --- */}
-            <div className="grid grid-cols-4 gap-6 px-8 py-6 max-w-7xl mx-auto">
+            <div className={`grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 px-4 md:px-8 py-6 max-w-7xl mx-auto ${(activeTab !== 'stats' && activeTab !== 'orders') && 'hidden md:grid'}`}>
                 <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-green-50 text-green-600 flex items-center justify-center text-2xl">💰</div>
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-green-50 text-green-600 flex items-center justify-center text-xl md:text-2xl">💰</div>
                     <div>
-                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Today's Revenue</p>
-                        <p className="text-2xl font-black text-gray-900">${revenue.toFixed(2)}</p>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Revenue</p>
+                        <p className="text-xl md:text-2xl font-black text-gray-900">${revenue.toFixed(2)}</p>
                     </div>
                 </div>
                 <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-2xl">📦</div>
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xl md:text-2xl">📦</div>
                     <div>
-                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Total Orders</p>
-                        <p className="text-2xl font-black text-gray-900">{todayOrders.length}</p>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Orders</p>
+                        <p className="text-xl md:text-2xl font-black text-gray-900">{todayOrders.length}</p>
                     </div>
                 </div>
                 <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center text-2xl">🔔</div>
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center text-xl md:text-2xl">🔔</div>
                     <div>
-                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Pending Action</p>
-                        <p className="text-2xl font-black text-gray-900">{pendingCount}</p>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Pending</p>
+                        <p className="text-xl md:text-2xl font-black text-gray-900">{pendingCount}</p>
                     </div>
                 </div>
                 <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center text-2xl">⭐</div>
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center text-xl md:text-2xl">⭐</div>
                     <div>
-                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Rating</p>
-                        <p className="text-2xl font-black text-gray-900">{restaurant.rating}</p>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Rating</p>
+                        <p className="text-xl md:text-2xl font-black text-gray-900">{restaurant.rating}</p>
                     </div>
                 </div>
             </div>
 
             {/* --- MAIN CONTENT --- */}
-            <div className="px-8 pb-12 max-w-7xl mx-auto">
+            <div className="px-4 md:px-8 pb-12 max-w-7xl mx-auto">
 
                 {/* 1. KANBAN BOARD VIEW */}
                 {activeTab === 'orders' && (
-                    <div className="grid grid-cols-4 gap-6 h-[calc(100vh-250px)]">
-                        {/* Column: New */}
-                        <div className="bg-gray-100/50 rounded-3xl p-4 flex flex-col">
-                            <div className="flex items-center justify-between mb-4 px-2">
-                                <h3 className="font-bold text-gray-700">New Orders</h3>
-                                <span className="bg-orange-100 text-orange-700 text-xs font-bold px-2 py-1 rounded-full">{kanbanColumns.new.length}</span>
-                            </div>
-                            <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar">
-                                {kanbanColumns.new.map(order => (
-                                    <div key={order._id} className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-orange-500 animate-in fade-in slide-in-from-bottom-2">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <span className="font-mono text-xs text-gray-400">#{order._id.slice(-4)}</span>
-                                            <span className="text-xs font-bold text-orange-600">{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    <div className="flex flex-col gap-6">
+                        {/* Mobile Column Switcher */}
+                        <div className="flex md:hidden bg-gray-200/50 p-1.5 rounded-2xl gap-1 overflow-x-auto no-scrollbar">
+                            {Object.keys(kanbanColumns).map(col => (
+                                <button
+                                    key={col}
+                                    onClick={() => setMobileActiveColumn(col)}
+                                    className={`flex-1 min-w-[100px] py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${mobileActiveColumn === col ? 'bg-white text-gray-900 shadow-md scale-[1.02]' : 'text-gray-500'}`}
+                                >
+                                    {col} ({kanbanColumns[col].length})
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 h-auto md:h-[calc(100vh-250px)]">
+                            {/* Column: New */}
+                            <div className={`bg-gray-100/50 rounded-3xl p-4 flex flex-col ${mobileActiveColumn !== 'new' && 'hidden md:flex'}`}>
+                                <div className="hidden md:flex items-center justify-between mb-4 px-2">
+                                    <h3 className="font-bold text-gray-700">New Orders</h3>
+                                    <span className="bg-orange-100 text-orange-700 text-xs font-bold px-2 py-1 rounded-full">{kanbanColumns.new.length}</span>
+                                </div>
+                                <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar">
+                                    {kanbanColumns.new.map(order => (
+                                        <div key={order._id} className="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-orange-500 animate-in fade-in slide-in-from-bottom-2">
+                                            <div className="flex justify-between items-start mb-3">
+                                                <span className="font-mono text-[10px] bg-gray-100 px-2 py-1 rounded text-gray-500 uppercase">#{order._id.slice(-4)}</span>
+                                                <span className="text-xs font-black text-orange-600">{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                            </div>
+                                            <div className="space-y-2 mb-4">
+                                                {order.items.map((item, i) => (
+                                                    <div key={i} className="text-sm font-bold text-gray-800 flex justify-between">
+                                                        <span>{item.quantity}x {item.name}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="flex justify-between items-center mb-4">
+                                                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Total Value</span>
+                                                <p className="font-black text-gray-900 text-xl">${order.totalAmount.toFixed(2)}</p>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <button onClick={() => updateOrderStatus(order._id, 'confirmed')} className="bg-gray-900 text-white py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-black transition-all">Accept</button>
+                                                <button onClick={() => updateOrderStatus(order._id, 'cancelled')} className="bg-white border border-gray-200 text-red-500 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-50 transition-all">Decline</button>
+                                            </div>
                                         </div>
-                                        <div className="space-y-1 mb-3">
-                                            {order.items.map((item, i) => (
-                                                <div key={i} className="text-sm font-medium text-gray-800 flex justify-between">
-                                                    <span>{item.quantity}x {item.name}</span>
+                                    ))}
+                                    {kanbanColumns.new.length === 0 && <div className="text-center py-12 text-gray-400 text-xs font-black uppercase tracking-[0.2em] border-2 border-dashed border-gray-200 rounded-2xl">No new orders</div>}
+                                </div>
+                            </div>
+
+                            {/* Column: Kitchen */}
+                            <div className={`bg-gray-100/50 rounded-3xl p-4 flex flex-col ${mobileActiveColumn !== 'preparing' && 'hidden md:flex'}`}>
+                                <div className="hidden md:flex items-center justify-between mb-4 px-2">
+                                    <h3 className="font-bold text-gray-700">Kitchen</h3>
+                                    <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-full">{kanbanColumns.preparing.length}</span>
+                                </div>
+                                <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar">
+                                    {kanbanColumns.preparing.map(order => (
+                                        <div key={order._id} className="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-blue-500">
+                                            <div className="flex justify-between items-start mb-3">
+                                                <span className="font-mono text-[10px] bg-gray-100 px-2 py-1 rounded text-gray-500 uppercase">#{order._id.slice(-4)}</span>
+                                                <span className="text-xs font-black text-blue-600 uppercase tracking-widest">{order.status === 'confirmed' ? 'Queued' : 'Cooking'}</span>
+                                            </div>
+                                            <div className="space-y-2 mb-4 opacity-80">
+                                                {order.items.map((item, i) => (
+                                                    <div key={i} className="text-sm font-bold text-gray-800 flex justify-between">
+                                                        <span>{item.quantity}x {item.name}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <button onClick={() => updateOrderStatus(order._id, 'ready_for_pickup')} className="w-full bg-blue-600 text-white py-3.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20">
+                                                Mark Ready 🔔
+                                            </button>
+                                        </div>
+                                    ))}
+                                    {kanbanColumns.preparing.length === 0 && <div className="text-center py-12 text-gray-400 text-xs font-black uppercase tracking-[0.2em] border-2 border-dashed border-gray-200 rounded-2xl">Kitchen Clear</div>}
+                                </div>
+                            </div>
+
+                            {/* Column: Ready */}
+                            <div className={`bg-gray-100/50 rounded-3xl p-4 flex flex-col ${mobileActiveColumn !== 'ready' && 'hidden md:flex'}`}>
+                                <div className="hidden md:flex items-center justify-between mb-4 px-2">
+                                    <h3 className="font-bold text-gray-700">Ready</h3>
+                                    <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded-full">{kanbanColumns.ready.length}</span>
+                                </div>
+                                <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar">
+                                    {kanbanColumns.ready.map(order => (
+                                        <div key={order._id} className="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-green-500 opacity-90">
+                                            <div className="flex justify-between items-start mb-3">
+                                                <span className="font-mono text-[10px] bg-gray-100 px-2 py-1 rounded text-gray-500 uppercase">#{order._id.slice(-4)}</span>
+                                                <span className="text-xs font-black text-green-600 uppercase tracking-widest">Ready</span>
+                                            </div>
+                                            <p className="text-sm font-black text-gray-800 mb-4">{order.items.length} Items Packed</p>
+                                            <div className="py-3 bg-green-50 text-green-700 text-[10px] font-black uppercase tracking-widest rounded-xl text-center border border-green-100">
+                                                Awaiting Rider
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {kanbanColumns.ready.length === 0 && <div className="text-center py-12 text-gray-400 text-xs font-black uppercase tracking-[0.2em] border-2 border-dashed border-gray-200 rounded-2xl">No units ready</div>}
+                                </div>
+                            </div>
+
+                            {/* Column: Out */}
+                            <div className={`bg-gray-100/50 rounded-3xl p-4 flex flex-col ${mobileActiveColumn !== 'out' && 'hidden md:flex'}`}>
+                                <div className="hidden md:flex items-center justify-between mb-4 px-2">
+                                    <h3 className="font-bold text-gray-700">On the Way</h3>
+                                    <span className="bg-purple-100 text-purple-700 text-xs font-bold px-2 py-1 rounded-full">{kanbanColumns.out.length}</span>
+                                </div>
+                                <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar">
+                                    {kanbanColumns.out.map(order => (
+                                        <div key={order._id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <span className="font-mono text-[10px] bg-gray-100 px-2 py-1 rounded text-gray-500 uppercase">#{order._id.slice(-4)}</span>
+                                                <span className="text-xs font-black text-purple-600 uppercase tracking-widest">En Route</span>
+                                            </div>
+                                            <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-2xl border border-purple-100">
+                                                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-xl shadow-sm">🛵</div>
+                                                <div>
+                                                    <p className="text-[10px] font-black text-purple-400 uppercase leading-none mb-1">Assigned Rider</p>
+                                                    <p className="text-sm font-black text-gray-900">{order.riderId?.userId?.name || 'Rider-449'}</p>
                                                 </div>
-                                            ))}
+                                            </div>
                                         </div>
-                                        <p className="text-right font-black text-gray-900 mb-3 text-lg">${order.totalAmount.toFixed(2)}</p>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <button onClick={() => updateOrderStatus(order._id, 'confirmed')} className="bg-gray-900 text-white py-2 rounded-lg text-xs font-bold hover:bg-gray-800">Accept</button>
-                                            <button onClick={() => updateOrderStatus(order._id, 'cancelled')} className="dg-white border border-gray-200 text-red-500 py-2 rounded-lg text-xs font-bold hover:bg-red-50">Decline</button>
-                                        </div>
-                                    </div>
-                                ))}
-                                {kanbanColumns.new.length === 0 && <div className="text-center py-10 text-gray-400 text-sm font-medium border-2 border-dashed border-gray-200 rounded-xl">No new orders</div>}
-                            </div>
-                        </div>
-
-                        {/* Column: Preparing */}
-                        <div className="bg-gray-100/50 rounded-3xl p-4 flex flex-col">
-                            <div className="flex items-center justify-between mb-4 px-2">
-                                <h3 className="font-bold text-gray-700">Kitchen</h3>
-                                <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-full">{kanbanColumns.preparing.length}</span>
-                            </div>
-                            <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar">
-                                {kanbanColumns.preparing.map(order => (
-                                    <div key={order._id} className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <span className="font-mono text-xs text-gray-400">#{order._id.slice(-4)}</span>
-                                            <span className="text-xs font-bold text-blue-600">{order.status === 'confirmed' ? 'Queued' : 'Cooking'}</span>
-                                        </div>
-                                        <div className="space-y-1 mb-3 opacity-80">
-                                            {order.items.map((item, i) => (
-                                                <div key={i} className="text-sm text-gray-800 flex justify-between">
-                                                    <span>{item.quantity}x {item.name}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <button onClick={() => updateOrderStatus(order._id, 'ready_for_pickup')} className="w-full bg-blue-600 text-white py-2 rounded-lg text-xs font-bold hover:bg-blue-700 mt-2">
-                                            Mark Ready 🔔
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Column: Ready */}
-                        <div className="bg-gray-100/50 rounded-3xl p-4 flex flex-col">
-                            <div className="flex items-center justify-between mb-4 px-2">
-                                <h3 className="font-bold text-gray-700">Ready</h3>
-                                <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded-full">{kanbanColumns.ready.length}</span>
-                            </div>
-                            <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar">
-                                {kanbanColumns.ready.map(order => (
-                                    <div key={order._id} className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500 opacity-80 hover:opacity-100 transition-opacity">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <span className="font-mono text-xs text-gray-400">#{order._id.slice(-4)}</span>
-                                            <span className="text-xs font-bold text-green-600">Waiting Pickup</span>
-                                        </div>
-                                        <p className="text-sm font-medium text-gray-800 mb-2">{order.items.length} Items</p>
-                                        <div className="p-2 bg-green-50 text-green-700 text-xs font-bold rounded-lg text-center">
-                                            Rider Notified
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Column: Out */}
-                        <div className="bg-gray-100/50 rounded-3xl p-4 flex flex-col">
-                            <div className="flex items-center justify-between mb-4 px-2">
-                                <h3 className="font-bold text-gray-700">Out for Delivery</h3>
-                                <span className="bg-purple-100 text-purple-700 text-xs font-bold px-2 py-1 rounded-full">{kanbanColumns.out.length}</span>
-                            </div>
-                            <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar">
-                                {kanbanColumns.out.map(order => (
-                                    <div key={order._id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <span className="font-mono text-xs text-gray-400">#{order._id.slice(-4)}</span>
-                                            <span className="text-xs font-bold text-purple-600">On Way</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center text-xs">🛵</div>
-                                            <span className="text-sm font-medium text-gray-700">{order.riderId?.userId?.name || 'Rider'}</span>
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                    {kanbanColumns.out.length === 0 && <div className="text-center py-12 text-gray-400 text-xs font-black uppercase tracking-[0.2em] border-2 border-dashed border-gray-200 rounded-2xl">No active deliveries</div>}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -325,36 +359,41 @@ const RestaurantDashboard = () => {
                 {/* 2. MENU MANAGER VIEW */}
                 {activeTab === 'menu' && (
                     <div className="animate-in fade-in zoom-in-95 duration-300">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-2xl font-black text-gray-900">Menu items</h2>
-                            <button onClick={() => setShowAddItemModal(true)} className="bg-gray-900 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-gray-800 transition-all flex items-center gap-2">
-                                <span className="text-xl">+</span> Add New Item
+                        <div className="flex justify-between items-center mb-8 px-1">
+                            <div>
+                                <h2 className="text-2xl font-black text-gray-900">Menu items</h2>
+                                <p className="text-gray-400 text-sm font-bold uppercase tracking-widest leading-none mt-1">{foodItems.length} active dishes</p>
+                            </div>
+                            <button onClick={() => setShowAddItemModal(true)} className="bg-gray-900 text-white w-12 h-12 md:w-auto md:px-6 md:py-3 rounded-2xl font-bold shadow-xl hover:bg-black transition-all flex items-center justify-center gap-2">
+                                <span className="text-2xl leading-none">+</span> <span className="hidden md:inline">Add Dish</span>
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                             {foodItems.map(item => (
-                                <div key={item._id} className={`bg-white rounded-3xl p-4 border transition-all ${!item.isAvailable ? 'border-gray-200 opacity-70 grayscale' : 'border-gray-100 hover:shadow-xl hover:-translate-y-1'}`}>
-                                    <div className="relative h-48 mb-4 rounded-2xl overflow-hidden group">
-                                        <img src={item.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500'} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={item.name} />
-                                        <button onClick={() => setEditingItem(item)} className="absolute top-3 right-3 bg-white/90 p-2 rounded-lg shadow-sm hover:bg-white text-gray-700 font-bold text-xs backdrop-blur-sm">Only Edit</button>
+                                <div key={item._id} className={`bg-white rounded-[2.5rem] p-4 border transition-all flex flex-col ${!item.isAvailable ? 'border-gray-200 opacity-60 grayscale' : 'border-gray-100 hover:shadow-2xl hover:shadow-orange-500/10 hover:-translate-y-1'}`}>
+                                    <div className="relative h-48 mb-6 rounded-3xl overflow-hidden group">
+                                        <img src={item.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={item.name} />
+                                        <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button onClick={() => setEditingItem(item)} className="w-full bg-white py-2 rounded-xl shadow-sm hover:bg-gray-50 text-gray-900 font-black text-[10px] uppercase tracking-widest transition-all">Quick Edit</button>
+                                        </div>
                                     </div>
-                                    <div className="flex justify-between items-start mb-2">
-                                        <h3 className="font-bold text-gray-900 text-lg leading-tight">{item.name}</h3>
-                                        <span className="font-black text-green-600">${item.price}</span>
+                                    <div className="flex justify-between items-start mb-3 px-1">
+                                        <h3 className="font-black text-gray-900 text-lg leading-tight flex-1 pr-2">{item.name}</h3>
+                                        <span className="font-black text-green-600 bg-green-50 px-3 py-1 rounded-full border border-green-100">${item.price.toFixed(2)}</span>
                                     </div>
-                                    <p className="text-sm text-gray-500 line-clamp-2 mb-4 h-10">{item.description}</p>
+                                    <p className="text-sm text-gray-400 font-medium line-clamp-2 mb-6 h-10 px-1">{item.description}</p>
 
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-2 mt-auto">
                                         <button
                                             onClick={() => toggleItemAvailability(item)}
-                                            className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-colors ${item.isAvailable ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'}`}
+                                            className={`flex-1 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${item.isAvailable ? 'bg-red-50 text-red-500 hover:bg-red-500 hover:text-white' : 'bg-green-50 text-green-500 hover:bg-green-500 hover:text-white'}`}
                                         >
-                                            {item.isAvailable ? 'Mark Unavailable' : 'Mark Available'}
+                                            {item.isAvailable ? 'Disable' : 'Enable'}
                                         </button>
                                         <button
                                             onClick={() => handleDeleteItem(item._id)}
-                                            className="w-10 flex items-center justify-center bg-gray-50 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50"
+                                            className="w-12 h-12 flex items-center justify-center bg-gray-50 rounded-2xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all border border-gray-100 shadow-sm"
                                         >
                                             🗑️
                                         </button>
@@ -365,6 +404,9 @@ const RestaurantDashboard = () => {
                     </div>
                 )}
             </div>
+
+            {/* Mobile Bottom Navigation */}
+            <RestaurantBottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
 
             {/* --- MODALS --- */}
             {(showAddItemModal || editingItem) && (

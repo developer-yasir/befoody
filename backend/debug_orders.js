@@ -1,41 +1,60 @@
-const API_URL = 'http://localhost:5000/api';
+const mongoose = require('mongoose');
+require('dotenv').config();
 
-const ADMIN_CREDS = { email: 'admin@befoody.com', password: 'admin123' };
+// Use ENV URI if provided, otherwise fallback
+const uri = process.env.MONGO_URI || 'mongodb://localhost:27017/befoody_forced_local_v3';
 
-const login = async () => {
-    const res = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ADMIN_CREDS)
-    });
-    const data = await res.json();
-    return data.token;
+const debug = async () => {
+    try {
+        console.log('🔍 Connecting to:', uri);
+        await mongoose.connect(uri);
+
+        // Define schemas minimally for reading
+        const Rider = mongoose.model('Rider', new mongoose.Schema({
+            userId: mongoose.Schema.Types.ObjectId,
+            isAvailable: Boolean,
+            activeOrderId: mongoose.Schema.Types.ObjectId
+        }));
+
+        const User = mongoose.model('User', new mongoose.Schema({ email: String }));
+
+        const Order = mongoose.model('Order', new mongoose.Schema({
+            status: String,
+            riderId: mongoose.Schema.Types.ObjectId,
+            restaurantId: mongoose.Schema.Types.ObjectId,
+            userId: mongoose.Schema.Types.ObjectId,
+            createdAt: Date
+        }));
+
+        // 1. Check Rider State
+        const riderUser = await User.findOne({ email: 'alex.rider@befoody.com' });
+        if (!riderUser) {
+            console.log('❌ Rider User not found');
+            return;
+        }
+
+        const riderProfile = await Rider.findOne({ userId: riderUser._id });
+        console.log('\n--- Rider Profile ---');
+        console.log('ID:', riderProfile._id);
+        console.log('Is Available:', riderProfile.isAvailable);
+        console.log('Active Order ID:', riderProfile.activeOrderId ? riderProfile.activeOrderId : 'None');
+
+        // 2. Check Recent Orders
+        const recentOrders = await Order.find().sort({ createdAt: -1 }).limit(5);
+        console.log('\n--- Recent 5 Orders ---');
+        recentOrders.forEach(o => {
+            console.log(`Order ID: ${o._id}`);
+            console.log(`- Status: "${o.status}"`);
+            console.log(`- Rider ID: ${o.riderId}`);
+            console.log(`- Created: ${o.createdAt}`);
+            console.log('----------------');
+        });
+
+    } catch (e) {
+        console.error(e);
+    } finally {
+        mongoose.connection.close();
+    }
 };
 
-const run = async () => {
-    console.log('🔍 Debugging Orders & Restaurants...\n');
-    const token = await login();
-    const headers = { Authorization: `Bearer ${token}` };
-
-    // Fetch Restaurants
-    const rRes = await fetch(`${API_URL}/restaurants`, { headers });
-    const restaurants = await rRes.json();
-    console.log('📋 Restaurants:');
-    const rMap = {};
-    restaurants.forEach(r => {
-        console.log(`- [${r._id}] ${r.name} (Owner: ${r.ownerId})`);
-        rMap[r._id] = r.name;
-    });
-
-    // Fetch All Orders
-    const oRes = await fetch(`${API_URL}/orders/admin/all`, { headers });
-    const orders = await oRes.json();
-
-    console.log('\n📦 Recent Orders (Last 5):');
-    orders.slice(0, 5).forEach(o => {
-        const rName = rMap[o.restaurantId?._id || o.restaurantId] || 'UNKNOWN';
-        console.log(`- Subtotal: ${o.totalAmount} | Status: ${o.status} | Rest: ${rName} (${o.restaurantId?._id || o.restaurantId})`);
-    });
-};
-
-run();
+debug();

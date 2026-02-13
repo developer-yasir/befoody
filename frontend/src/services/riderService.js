@@ -58,6 +58,24 @@ export const completeDelivery = async (orderId) => {
     }
 };
 
+export const getEarnings = async () => {
+    try {
+        const response = await api.get('/api/riders/earnings');
+        return response.data;
+    } catch (error) {
+        throw error.response?.data?.message || 'Failed to fetch earnings';
+    }
+};
+
+export const updateRiderProfile = async (data) => {
+    try {
+        const response = await api.put('/api/riders/profile', data);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data?.message || 'Failed to update profile';
+    }
+};
+
 export const getDeliveryHistory = async () => {
     try {
         const response = await api.get('/api/riders/history');

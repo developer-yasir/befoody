@@ -186,6 +186,87 @@ router.get('/history', auth, async (req, res) => {
     }
 });
 
+// Get aggregated earnings
+router.get('/earnings', auth, async (req, res) => {
+    try {
+        const rider = await Rider.findOne({ userId: req.userId });
+        if (!rider) return res.status(404).json({ message: 'Rider not found' });
+
+        // Get all completed orders for this rider
+        const orders = await Order.find({
+            riderId: rider._id,
+            status: 'delivered'
+        }).sort({ updatedAt: -1 });
+
+        // Calculate Today's Earnings
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const todaysOrders = orders.filter(o => new Date(o.updatedAt) >= today);
+        const todayEarnings = todaysOrders.reduce((sum, o) => sum + (o.deliveryFee || 0), 0);
+
+        // Calculate Weekly Earnings (Last 7 Days)
+        const lastWeek = new Date(today);
+        lastWeek.setDate(lastWeek.getDate() - 7);
+
+        const weekOrders = orders.filter(o => new Date(o.updatedAt) >= lastWeek);
+        const weekEarnings = weekOrders.reduce((sum, o) => sum + (o.deliveryFee || 0), 0);
+
+        // Daily breakdown for chart (Last 7 days)
+        const chartData = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date(today);
+            d.setDate(d.getDate() - i);
+            const dateStr = d.toLocaleDateString('en-US', { weekday: 'short' });
+
+            const dayOrders = orders.filter(o => {
+                const orderDate = new Date(o.updatedAt);
+                return orderDate.getDate() === d.getDate() &&
+                    orderDate.getMonth() === d.getMonth() &&
+                    orderDate.getFullYear() === d.getFullYear();
+            });
+
+            chartData.push({
+                day: dateStr,
+                amount: dayOrders.reduce((sum, o) => sum + (o.deliveryFee || 0), 0)
+            });
+        }
+
+        res.json({
+            totalEarnings: rider.earnings,
+            today: { amount: todayEarnings, count: todaysOrders.length },
+            week: { amount: weekEarnings, count: weekOrders.length },
+            chart: chartData,
+            recentPayouts: [ // Mock payouts
+                { id: 1, date: '2023-10-25', amount: 150.00, status: 'Paid' },
+                { id: 2, date: '2023-10-18', amount: 200.50, status: 'Paid' }
+            ]
+        });
+
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+// Update Rider Profile (Vehicle/License)
+router.put('/profile', auth, async (req, res) => {
+    try {
+        const { vehicleType, vehicleNumber } = req.body;
+
+        const rider = await Rider.findOneAndUpdate(
+            { userId: req.userId },
+            { vehicleType, vehicleNumber },
+            { new: true }
+        ).populate('userId', 'name email phone');
+
+        if (!rider) return res.status(404).json({ message: 'Rider not found' });
+
+        res.json(rider);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
 // Update availability
 router.put('/availability', auth, async (req, res) => {
     try {

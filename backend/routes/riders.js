@@ -101,9 +101,20 @@ router.post('/accept-order/:orderId', auth, async (req, res) => {
         rider.activeOrderId = order._id;
         await rider.save();
 
-        // Emit socket event
-        const io = req.app.get('socketio');
-        io.to(`user_${order.userId}`).emit('orderStatusUpdate', order);
+        // Emit socket event (safely)
+        try {
+            if (order.userId) {
+                const io = req.app.get('socketio');
+                if (io) {
+                    io.to(`user_${order.userId}`).emit('orderStatusUpdate', order);
+                }
+            } else {
+                console.warn(`Order ${order._id} has no userId, skipping socket update.`);
+            }
+        } catch (socketError) {
+            console.error('Socket emission failed:', socketError);
+            // Continue execution, do not fail the request
+        }
 
         res.json(order);
     } catch (error) {

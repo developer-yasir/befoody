@@ -65,7 +65,7 @@ router.get('/available-orders', auth, async (req, res) => {
     try {
         const orders = await Order.find({
             status: 'ready_for_pickup',
-            riderId: null
+            $or: [{ riderId: null }, { riderId: { $exists: false } }]
         })
             .populate('restaurantId', 'name address')
             .populate('userId', 'name phone')

@@ -58,9 +58,12 @@ router.post('/login', async (req, res) => {
 
         // Check if user exists
         const user = await User.findOne({ email });
+        console.log(`Auth Login: Finding user for ${email}`);
         if (!user) {
+            console.log('Auth Login: User NOT found');
             return res.status(400).json({ message: 'Invalid credentials' });
         }
+        console.log(`Auth Login: User found: ${user._id}, Role: ${user.role}`);
 
         // Verify password
         const isMatch = await bcrypt.compare(password, user.password);

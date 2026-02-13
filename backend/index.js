@@ -49,8 +49,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads'));
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/befoody')
-    .then(() => console.log('✅ MongoDB connected successfully'))
+console.log('Backend: Attempting to connect to MongoDB at:', process.env.MONGO_URI);
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => console.log('✅ MongoDB connected successfully TO:', mongoose.connection.name))
     .catch(err => console.error('❌ MongoDB connection error:', err));
 
 // Socket.IO connection handling
